@@ -1,0 +1,57 @@
+init:
+  position:
+    x: 0.691948429336368
+    y: -1.395751807594636
+    z: 312.7822375757000
+
+  velocity:
+    x: 0.0
+    y: 0.0
+    z: 0.0
+
+  orientation:
+    x: 0.0
+    y: 0.0
+    z: 1.605702911834783
+
+  bias:
+    accel:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    gyro:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+
+imu:
+  publish_hz: 50
+  sensor_pub_rate: 125
+  topic: /imu/dataAdis
+  noise:
+    accel_noise_sigma: 0.00005
+    gyro_noise_sigma: 0.0000024241
+    accel_bias_rw_sigma: 0.07
+    gyro_bias_rw_sigma: 0.15
+
+
+odo:
+  topic: /husky_velocity_controller/odom
+  updates:
+    do_zupt: false
+    do_zaru: false
+
+
+joint:
+  topic: /joint_states
+
+frames:
+  frame_id_out: map
+  frame_id_fixed: odom
+  frame_id_imu: imu_link
+  frame_id_odo: odom_link
+
+wheel:
+  T_r_: 0.125
+  s_or_: 0.0
+  s_delta_or_: 0.0
