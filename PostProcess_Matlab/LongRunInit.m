@@ -95,7 +95,8 @@ aaa=1;
 zeroUptCount=0;
 odomUptCount=1;
 %% updates
-odomUpdate=true;
+odomUpdate=false;
 zeroUpdate=true;
 nonHolo=true;
-backProp=true;
+backProp=false;
+gpsResults=false;

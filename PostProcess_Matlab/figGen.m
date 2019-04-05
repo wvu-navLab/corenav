@@ -73,8 +73,10 @@ h(3)=figure;
 fill( [tTimu(1:end-1,1)'-tTimu(1) fliplr(tTimu(1:end-1,1)'-tTimu(1))],  [ENU_3P(1,:) fliplr(ENU3P(1,:))], 'r','DisplayName','3\sigma Covariance Hull' );
 hold on
 plot(tTimu(1:end-1,1)-tTimu(1),ENU(1,:),'-b','DisplayName','Filter Estimation East'); 
+if gpsResults()
 hold on;
 plot(tTodom-min(tTodom),ENUGPS(1,1:length(tTodom)),'-k','DisplayName','GPS Solution East');
+end
 % hold on;
 % plot(tTodom-min(tTodom),Pos_x-Pos_x(1),'-.g','DisplayName','odom')
 % hold on
@@ -90,9 +92,10 @@ h(4)=figure;
 fill( [tTimu(1:end-1,1)'-tTimu(1) fliplr(tTimu(1:end-1,1)'-tTimu(1))],  [ENU_3P(2,:) fliplr(ENU3P(2,:))], 'r','DisplayName','3\sigma Covariance Hull' );
 hold on
 plot(tTimu(1:end-1,1)-tTimu(1),ENU(2,:),'-b','DisplayName','Filter Estimation North'); 
+if gpsResults()
 hold on;
 plot(tTodom-min(tTodom),ENUGPS(2,1:length(tTodom)),'-k','DisplayName','GPS Solution North');
-
+end
 % plot(tTimu(1:end-1,1)-tTimu(1),ENU(2,:),'-.b','DisplayName','LLN'); 
 % hold on; 
 % plot(tTodom-min(tTodom),ENUGPS(2,1:length(tTodom)),'-.r','DisplayName','true')
@@ -111,9 +114,10 @@ h(5)=figure;
 fill( [tTimu(1:end-1,1)'-tTimu(1) fliplr(tTimu(1:end-1,1)'-tTimu(1))],  [ENU_3P(3,:) fliplr(ENU3P(3,:))], 'r','DisplayName','3\sigma Covariance Hull' );
 hold on
 plot(tTimu(1:end-1,1)-tTimu(1),ENU(3,:),'-b','DisplayName','Filter Estimation Up'); 
+if gpsResults()
 hold on;
 plot(tTodom-min(tTodom),ENUGPS(3,1:length(tTodom)),'-k','DisplayName','GPS Solution Up');
-
+end
 % plot(tTimu(1:end-1,1)-tTimu(1),ENU(3,:)-ENU(3,1),'-.b','DisplayName','LLN'); 
 % hold on; 
 % plot(tTodom-min(tTodom),ENUGPS(3,1:length(tTodom)),'-.r','DisplayName','true')
@@ -183,15 +187,17 @@ legend('show');
 % legend('show');
 
 h(6)=figure;
-plot(ENU(1,:),ENU(2,:),'.--r','DisplayName','INS')
+plot(ENU(1,:),ENU(2,:),'.--r','DisplayName','CoreNav')
 hold on
-plot(ENU(1,1),ENU(2,1),'o','DisplayName','INS Start')
+plot(ENU(1,1),ENU(2,1),'o','DisplayName','CoreNav Start')
 hold on
-plot(ENU(1,end),ENU(2,end),'*','DisplayName','INS End')
+plot(ENU(1,end),ENU(2,end),'*','DisplayName','CoreNav End')
+if gpsResults()
 hold on
-plot(ENUGPS(1,:),ENUGPS(2,:),'.-k','DisplayName','Truth')
+plot(ENUGPS(1,:),ENUGPS(2,:),'.-k','DisplayName','GPS ENU')
+end
 hold on
-plot(ENUcorrected(1,:),ENUcorrected(2,:),'--og','DisplayName','LLH')
+plot(ENUcorrected(1,:),ENUcorrected(2,:),'--og','DisplayName','CoreNav')
 
 if odomUpdate
 hold on
@@ -199,15 +205,17 @@ plot(ENUcorrected1(1,:),ENUcorrected1(2,:),'*b','DisplayName','Slip')
 hold on
 plot(ENUcorrected2(1,:),ENUcorrected2(2,:),'*c','DisplayName','Mahalanobis')
 end
+if gpsResults
 hold on
 plot(ENUGPS(1),ENUGPS(2),'o','DisplayName','Truth Start')
 hold on
 
 plot(ENUGPS(1,end),ENUGPS(2,end),'*','DisplayName','Truth End')
+end
 xlabel('E(m) ')
 ylabel('N(m) ')
 legend('show');
-
+if gpsResults()
 h(7)=figure;
 subplot(311),plot(tTimu(1:end-1,1)-tTimu(1),gpsLongerXYZ(1,:)-xyz(1,:),'DisplayName','x_{err}')
 ylabel('x (m)')
@@ -218,7 +226,7 @@ xlabel('time (sec)')
 subplot(313),plot(tTimu(1:end-1,1)-tTimu(1),gpsLongerXYZ(3,:)-xyz(3,:),'DisplayName','z_{err}')
 ylabel('z (m)')
 xlabel('time (sec)')
-
+end
 h(8)=figure;
 hold off
 
@@ -239,12 +247,14 @@ plot3(coords(1,:,ii),coords(2,:,ii),coords(3,:,ii),'Color',loyolagray)
 end
 
 plot3(ENU(1,:),ENU(2,:),ENU(3,:),'.r','DisplayName','Filter Estimate')
+if gpsResults
 hold on
 % plot3(ENU3P(1,:),ENU3P(2,:),ENU3P(3,:),'--k','DisplayName','Covariance Ellipse')
 % hold on
 % plot3(ENU_3P(1,:),ENU_3P(2,:),ENU_3P(3,:),'--k')
 % hold on
 plot3(ENUGPS(1,:),ENUGPS(2,:),ENUGPS(3,:),'.-k','DisplayName','GPS Solution')
+end
 grid on
 xlabel('East (m)')
 ylabel('North (m)')

@@ -1,37 +1,3 @@
-%odom
-% 
-%   <!-- Wheel Mounting Positions -->
-%   <xacro:property name="wheelbase" value="0.5120" />
-%   <xacro:property name="track" value="0.5708" />
-%   <xacro:property name="wheel_vertical_offset" value="0.03282" />
-% 
-%   <!-- Wheel Properties -->
-%   <xacro:property name="wheel_length" value="0.1143" />
-%   <xacro:property name="wheel_radius" value="0.1651" />
-% <!-- IMU Link is the standard mounting position for the UM6 IMU.-->
-%   <!-- Can be modified with environment variables in /etc/ros/setup.bash -->
-%   <link name="imu_link"/>
-%   <joint name="imu_joint" type="fixed">
-%     <origin xyz="$(optenv HUSKY_IMU_XYZ 0.19 0 0.149)" rpy="$(optenv HUSKY_IMU_RPY 0 -1.5708 3.1416)" />
-%     <parent link="base_link" />
-%     <child link="imu_link" />
-%   </joint>
-%   <gazebo reference="imu_link">
-%   </gazebo>
-% 
-%   <!-- Husky wheel macros -->
-%   <xacro:husky_wheel wheel_prefix="front_left">
-%     <origin xyz="${wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
-%   </xacro:husky_wheel>
-%   <xacro:husky_wheel wheel_prefix="front_right">
-%     <origin xyz="${wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
-%   </xacro:husky_wheel>
-%   <xacro:husky_wheel wheel_prefix="rear_left">
-%     <origin xyz="${-wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
-%   </xacro:husky_wheel>
-%   <xacro:husky_wheel wheel_prefix="rear_right">
-%     <origin xyz="${-wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
-% </xacro:husky_wheel>
 wheel_radius=0.1651;%meters
 wheelbase=0.555; %meters
 i=1;
