@@ -43,12 +43,13 @@
     % eq. 2.48
     omega_n_in=omega_n_en + omega_n_ie;
     
-
+    alpha=omega_b_ib*dt;
 %     lateralVelocity=norm([GeneratedEnuVelocity(:,1) GeneratedEnuVelocity(:,2)]);
     % integrate considering body-rate, Earth-rate, and craft-rate
-    
+    Cbb=eye(3)+(sin(norm(alpha))/(norm(alpha)))*(skewsymm(alpha)) + ((1-cos(norm(alpha)))/(norm(alpha))^2)*(skewsymm(alpha)).^2;
  
     Cb2nPlus= Cb2nMinus*(eye(3)+Omega_b_ib*dt)-(Omega_n_ie+Omega_n_en)*Cb2nMinus*dt;
+%     Cb2nPlus= Cb2nMinus*(Cbb)-(Omega_n_ie+Omega_n_en)*Cb2nMinus*dt;
 %     
 %     omega_b_ie=CbnPlus'*omega_n_ie;
 %     omega_b_ei=-omega_b_ie;

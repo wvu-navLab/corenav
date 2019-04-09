@@ -2,7 +2,7 @@
 % Authors: Cagri Kilic and Jason Gross
 % Date: September 2018
 %%  -----------------------------------------------------------------------
-clc;
+% clc;
 clear;
 load LongRunData.mat % LshapeData.mat %ForwardDrive.mat
 %% odometry calculations
@@ -10,7 +10,7 @@ odom
 %% initialize variables
 LongRunInit % LshapeInit.mat %ForwardDriveInit.mat
 %% Double Low Pass Filter
-% dema
+dema
 for i=2:L
     dtIMU=tTimuAdis(i)-tTimuAdis(i-1); % calculates imu delta time from rostomat output tTimu
     TimeIMU(i)=dtIMU+TimeIMU(i-1); % creates imu time from delta time starting from zero
@@ -38,8 +38,18 @@ for i=2:L
     %% Q matrix --
     F21= -skewsymm(Cb2nPlus*(f_ib_b'));
     Q=getQins(F21,Cb2nPlus,insLLH(:,i),R_N,R_E,dtIMU);
+    [~,q] = chol(Q);
+    if q ~= 0
+    disp('Q matrix is not positive definite')
+    i
+    end
     %% P matrix
     P = STM*P*STM' + Q;
+    [~,p] = chol(P);
+    if p ~= 0
+    disp('P matrix is not positive definite')
+    i
+    end
     if odomUpdate()
         %% --------------------------------------------------------------------
         Cn2bPlus=Cb2nPlus';
@@ -175,6 +185,8 @@ for i=2:L
                 end % doBackProp
             end % if ZeroUpdate applied
         else
+                    ba(1:3,i)=x_err(10:12); % acce bias, this value will be removed from IMU acce output
+                    bg(1:3,i)=x_err(13:15); 
         end
     end
 
