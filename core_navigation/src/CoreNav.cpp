@@ -83,7 +83,7 @@ bool CoreNav::Init(const ros::NodeHandle& n){
         P(0,0)=1.218469679146834e-06; P(1,1)=1.218469679146834e-06; P(2,2)=4.873878716587337e-06;
         P(3,3)=4.000000000000001e-07; P(4,4)=4.000000000000001e-07; P(5,5)=4.000000000000001e-07;
         P(6,6)=1.21846967914683e-14; P(7,7)=1.21846967914683e-14; P(8,8)=100.0;
-        P(9,9)=-0.011428207234497;   P(10,10)=0.008740805264598 ; P(11,11)=0.013108032973440;
+        P(9,9)=-0.011428207234497;   P(10,10)=0.008740805264598; P(11,11)=0.013108032973440;
         P(12,12)=-8.805993629556402e-04; P(13,13)=9.874592038800420e-04;  P(14,14)=8.985670378275259e-04;
 
         ba_(0) = P(9,9);
@@ -94,17 +94,17 @@ bool CoreNav::Init(const ros::NodeHandle& n){
         bg_(2) = P(14,14);
 
         R_ << 0.0004,0,0,0,
-        0,0.1152,0,0,
-        0,0,0.0025,0,
-        0,0,0,0.0025;
+                0,0.1152,0,0,
+                0,0,0.0025,0,
+                0,0,0,0.0025;
 
         R_zupt << std::pow(0.012,2),0,0, // TODO: Revisit here
-        0,std::pow(0.012,2),0,
-        0,0,std::pow(0.012,2);
+                0,std::pow(0.012,2),0,
+                0,0,std::pow(0.012,2);
 
         R_zaru << std::pow(0.01,2),0,0, // TODO: Revisit here
-        0,std::pow(0.01,2),0,
-        0,0,std::pow(0.0025,2);
+                0,std::pow(0.01,2),0,
+                0,0,std::pow(0.0025,2);
 
         H11_<< 0.0,0.0,0.0;
         H12_ << 0.0,0.0,0.0;
@@ -116,12 +116,12 @@ bool CoreNav::Init(const ros::NodeHandle& n){
         H42_ << 0.0,0.0,0.0;
 
         H_zupt << 0,0,0,-1,0,0,0,0,0,0,0,0,0,0,0,
-                  0,0,0,0,-1,0,0,0,0,0,0,0,0,0,0,
-                  0,0,0,0,0,-1,0,0,0,0,0,0,0,0,0;
+                0,0,0,0,-1,0,0,0,0,0,0,0,0,0,0,
+                0,0,0,0,0,-1,0,0,0,0,0,0,0,0,0;
 
         H_zaru << 0,0,0,0,0,0,0,0,0,0,0,0,-1,0,0,
-                  0,0,0,0,0,0,0,0,0,0,0,0,0,-1,0,
-                  0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1;
+                0,0,0,0,0,0,0,0,0,0,0,0,0,-1,0,
+                0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1;
 
         ins_att_ << init_roll, init_pitch, init_yaw;
         ins_vel_ << init_vx, init_vy, init_vz;
@@ -232,8 +232,8 @@ bool CoreNav::RegisterCallbacks(const ros::NodeHandle& n){
 }
 
 void CoreNav::Propagate(const CoreNav::Vector6& imu, const CoreNav::Vector4& joint){
-  rearVel_ = (joint[3]+joint[2])*INS::wheel_radius/2.0;
-  headRate_ = ((joint[2]+joint[0])/2.0-(joint[3]+joint[1])/2.0)*INS::wheel_radius/(0.545);
+        rearVel_ = (joint[3]+joint[2])*INS::wheel_radius/2.0;
+        headRate_ = ((joint[2]+joint[0])/2.0-(joint[3]+joint[1])/2.0)*INS::wheel_radius/(0.545);
         dt_imu_ = imu_stamp_curr_ - imu_stamp_prev_;
         count++;
         omega_b_ib_ << imu[3] - bg_(0), imu[4]-bg_(1), imu[5]- bg_(2);
@@ -332,8 +332,8 @@ void CoreNav::Propagate(const CoreNav::Vector6& imu, const CoreNav::Vector4& joi
 
         CoreNav::Matrix3 Omega_b_eb;
         Omega_b_eb << 0.0, -1.0*omega_b_eb(2), omega_b_eb(1),
-        omega_b_eb(2), 0.0, -1.0*omega_b_eb(0),
-        -1.0*omega_b_eb(1), omega_b_eb(0), 0.0;
+                omega_b_eb(2), 0.0, -1.0*omega_b_eb(0),
+                -1.0*omega_b_eb(1), omega_b_eb(0), 0.0;
 
         // Measurement Innovation -- integration part for INS -- eq 16.42
         Vector3 tmp = Cn2bPlus*ins_vel_ + Omega_b_eb*(-0.272*(eye3.col(0)));
@@ -345,8 +345,8 @@ void CoreNav::Propagate(const CoreNav::Vector6& imu, const CoreNav::Vector4& joi
 
         if ( std::abs(odo[7]) <0.004) { // TODO: Revisit here
 
-              CoreNav::zupt(ins_vel_, ins_att_, ins_pos_, error_states_, P_);
-              CoreNav::zaru(ins_vel_, ins_att_, ins_pos_, error_states_, P_, omega_b_ib_);
+                CoreNav::zupt(ins_vel_, ins_att_, ins_pos_, error_states_, P_);
+                CoreNav::zaru(ins_vel_, ins_att_, ins_pos_, error_states_, P_, omega_b_ib_);
         }
         if ( headRate_ == 0 ) {
                 CoreNav::zaru(ins_vel_, ins_att_, ins_pos_, error_states_, P_, omega_b_ib_);
@@ -360,24 +360,24 @@ void CoreNav::Propagate(const CoreNav::Vector6& imu, const CoreNav::Vector4& joi
 
 
         double phi = ins_pos_(0);
-	      double lambda = ins_pos_(1);
-	      double h = ins_pos_(2);
+        double lambda = ins_pos_(1);
+        double h = ins_pos_(2);
 
-	      double a = 6378137.0000;	//% earth semimajor axis in meters
-	      double b = 6356752.3142;	//% earth semiminor axis in meters
-	      double e = sqrt(1-pow((b/a),2));
+        double a = 6378137.0000;  //% earth semimajor axis in meters
+        double b = 6356752.3142;  //% earth semiminor axis in meters
+        double e = sqrt(1-pow((b/a),2));
 
-	      double sinphi = sin(phi);
-	      double cosphi = cos(phi);
-	      double coslam = cos(lambda);
-	      double sinlam = sin(lambda);
+        double sinphi = sin(phi);
+        double cosphi = cos(phi);
+        double coslam = cos(lambda);
+        double sinlam = sin(lambda);
         double tan2phi = pow((tan(phi)),2);
-	      double tmp2 = 1 - e*e;
-	      double tmpden = sqrt( 1 + tmp2*tan2phi );
-	      double x1 = (a*coslam)/tmpden + h*coslam*cosphi;
+        double tmp2 = 1 - e*e;
+        double tmpden = sqrt( 1 + tmp2*tan2phi );
+        double x1 = (a*coslam)/tmpden + h*coslam*cosphi;
         double y1 = (a*sinlam)/tmpden + h*sinlam*cosphi;
         double tmp3 = sqrt(1 - e*e*sinphi*sinphi);
-        double	z1 = (a*tmp2*sinphi)/tmp3 + h*sinphi;
+        double z1 = (a*tmp2*sinphi)/tmp3 + h*sinphi;
         Vector3 p1(x1,y1,z1);
         // TODO:: Don't hardcode these params! Changes for every test
         Vector3 p2(856503.7292,-4842984.4396,4047974.3219); // TODO: Revisit here
@@ -385,17 +385,17 @@ void CoreNav::Propagate(const CoreNav::Vector6& imu, const CoreNav::Vector4& joi
         Vector3 orgLLH(init_x, init_y, init_z);
         double sinPhi = sin(orgLLH(0));
         double cosPhi = cos(orgLLH(0));
-	      double sinLam = sin(orgLLH(1));
-	      double cosLam = cos(orgLLH(1));
-	      Matrix R = ( Matrix(3,3) << (-1*sinLam), cosLam, 0, ((-1*sinPhi)*cosLam), ((-1*sinPhi)*sinLam), cosPhi, (cosPhi*cosLam), (cosPhi*sinLam), sinPhi ).finished();
-	      Vector3 pos;
+        double sinLam = sin(orgLLH(1));
+        double cosLam = cos(orgLLH(1));
+        Matrix R = ( Matrix(3,3) << (-1*sinLam), cosLam, 0, ((-1*sinPhi)*cosLam), ((-1*sinPhi)*sinLam), cosPhi, (cosPhi*cosLam), (cosPhi*sinLam), sinPhi ).finished();
+        Vector3 pos;
         pos = R*posDiff;
         ins_enu_ << pos;
 
-  PublishStates(ins_att_, attitude_pub_);
-  PublishStates(ins_vel_, velocity_pub_);
-  PublishStates(ins_pos_, position_pub_);
-  PublishStates(ins_enu_, enu_pub_);
+        PublishStates(ins_att_, attitude_pub_);
+        PublishStates(ins_vel_, velocity_pub_);
+        PublishStates(ins_pos_, position_pub_);
+        PublishStates(ins_enu_, enu_pub_);
         return;
 }
 
@@ -496,11 +496,11 @@ void CoreNav::Update(const CoreNav::Vector13& odo)
 CoreNav::Vector6 CoreNav::getImuData(const ImuData& imu_dataAdis_)
 {
         CoreNav::Vector6 imuVec((Vector(6) << imu_dataAdis_.linear_acceleration.y*(-1.0),
-                                     imu_dataAdis_.linear_acceleration.x,
-                                     imu_dataAdis_.linear_acceleration.z,
-                                     imu_dataAdis_.angular_velocity.y*(-1.0),
-                                     imu_dataAdis_.angular_velocity.x,
-                                     imu_dataAdis_.angular_velocity.z).finished());
+                                 imu_dataAdis_.linear_acceleration.x,
+                                 imu_dataAdis_.linear_acceleration.z,
+                                 imu_dataAdis_.angular_velocity.y*(-1.0),
+                                 imu_dataAdis_.angular_velocity.x,
+                                 imu_dataAdis_.angular_velocity.z).finished());
 
         return imuVec;
 }
@@ -508,9 +508,9 @@ CoreNav::Vector6 CoreNav::getImuData(const ImuData& imu_dataAdis_)
 CoreNav::Vector4 CoreNav::getJointData(const JointData& joint_data_)
 {
         CoreNav::Vector4 jointVec((Vector(4) << joint_data_.velocity[0],
-                                       joint_data_.velocity[1],
-                                       joint_data_.velocity[2],
-                                       joint_data_.velocity[3] ).finished());
+                                   joint_data_.velocity[1],
+                                   joint_data_.velocity[2],
+                                   joint_data_.velocity[3] ).finished());
         return jointVec;
 }
 
@@ -518,18 +518,18 @@ CoreNav::Vector13 CoreNav::getOdoData(const OdoData& odo_data_)
 {
 
         CoreNav::Vector13 odoVec( (Vector(13) << odo_data_.pose.pose.position.x,
-                                       odo_data_.pose.pose.position.y,
-                                       odo_data_.pose.pose.position.z,
-                                       odo_data_.pose.pose.orientation.w,
-                                       odo_data_.pose.pose.orientation.x,
-                                       odo_data_.pose.pose.orientation.y,
-                                       odo_data_.pose.pose.orientation.z,
-                                       odo_data_.twist.twist.linear.x,
-                                       odo_data_.twist.twist.linear.y,
-                                       odo_data_.twist.twist.linear.z,
-                                       odo_data_.twist.twist.angular.x,
-                                       odo_data_.twist.twist.angular.y,
-                                       odo_data_.twist.twist.angular.z ).finished() );
+                                   odo_data_.pose.pose.position.y,
+                                   odo_data_.pose.pose.position.z,
+                                   odo_data_.pose.pose.orientation.w,
+                                   odo_data_.pose.pose.orientation.x,
+                                   odo_data_.pose.pose.orientation.y,
+                                   odo_data_.pose.pose.orientation.z,
+                                   odo_data_.twist.twist.linear.x,
+                                   odo_data_.twist.twist.linear.y,
+                                   odo_data_.twist.twist.linear.z,
+                                   odo_data_.twist.twist.angular.x,
+                                   odo_data_.twist.twist.angular.y,
+                                   odo_data_.twist.twist.angular.z ).finished() );
 
         return odoVec;
 }
@@ -537,7 +537,7 @@ CoreNav::Vector13 CoreNav::getOdoData(const OdoData& odo_data_)
 
 // Publish estimated states in global frame
 void CoreNav::PublishStates(const CoreNav::Vector3& states,
-                                const ros::Publisher& pub){
+                            const ros::Publisher& pub){
         // // Check for subscribers before doing any work.
         if(pub.getNumSubscribers() == 0)
                 return;
@@ -579,8 +579,8 @@ CoreNav::Matrix3 CoreNav::skew_symm(const CoreNav::Vector3 vec)
 {
         CoreNav::Matrix3 ss;
         ss << 0.0, -1.0*vec(2), vec(1),
-        vec(2), 0.0, -1.0*vec(0),
-        -1.0*vec(1), vec(0), 0.0;
+                vec(2), 0.0, -1.0*vec(0),
+                -1.0*vec(1), vec(0), 0.0;
 
         return ss;
 }
@@ -708,7 +708,7 @@ CoreNav::Matrix CoreNav::insErrorStateModel_LNF(double R_EPlus, double R_N, Core
         CoreNav::Matrix3 F22;
         F22.row(0)<< insVel[2] / (R_N + insLLH[2]), -(2.0 * insVel[1] * tan(insLLH[0]) / (R_EPlus + insLLH[2])) - 2.0 *omega_ie * sin(insLLH[0]),insVel[0] / (R_N + insLLH[2]);
         F22.row(1)<< insVel[1] * tan(insLLH[0]) / (R_EPlus + insLLH[2]) + 2.0 * omega_ie *sin(insLLH[0]),(insVel[0] * tan(insLLH[0]) + insVel[2]) / (R_EPlus + insLLH[2]),insVel[1] / (R_EPlus + insLLH[2]) + 2.0 * omega_ie *cos(insLLH[0]);
-        F22.row(2)<<-2.0 * insVel[0] / (R_N + insLLH[2]),-2.0 * (insVel[1] / (R_EPlus + insLLH[2])) - 2.0 * omega_ie * cos(insLLH[0]),0.0;
+        F22.row(2)<< -2.0 * insVel[0] / (R_N + insLLH[2]),-2.0 * (insVel[1] / (R_EPlus + insLLH[2])) - 2.0 * omega_ie * cos(insLLH[0]),0.0;
 
         CoreNav::Matrix3 F23;
         F23.row(0)<< -(insVel[1] * insVel[1] * ((1.0 / cos(insLLH[0])) *(1.0 / cos(insLLH[0]))) / (R_EPlus + insLLH[2])) - 2.0 *insVel[1] * omega_ie * cos(insLLH[0]), 0.0,insVel[1] * insVel[1] * tan(insLLH[0]) / ((R_EPlus + insLLH[2]) * (R_EPlus + insLLH[2])) - insVel[0] * insVel[2] / ((R_N + insLLH[2]) * (R_N + insLLH[2]));
@@ -740,10 +740,10 @@ CoreNav::Matrix CoreNav::insErrorStateModel_LNF(double R_EPlus, double R_N, Core
         CoreNav::Matrix STM(15,15);
 
         STM<<PHI11, PHI12, PHI13, Eigen::Matrix3d::Zero(3,3),PHI15,
-        PHI21, PHI22, PHI23, PHI24, Eigen::Matrix3d::Zero(3,3),
-        Eigen::Matrix3d::Zero(3,3), PHI32, PHI33, Eigen::Matrix3d::Zero(3,3), Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
-        Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
-        Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Identity(3,3);
+                PHI21, PHI22, PHI23, PHI24, Eigen::Matrix3d::Zero(3,3),
+                Eigen::Matrix3d::Zero(3,3), PHI32, PHI33, Eigen::Matrix3d::Zero(3,3), Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
+                Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
+                Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Identity(3,3);
 
         return STM;
 }
@@ -756,7 +756,7 @@ CoreNav::Matrix CoreNav::calc_Q(double R_N, double R_E, CoreNav::Vector3 insLLH,
         T_rn_p.row(0)<<1.0/(R_N+insLLH(2)),0.0,0.0;
         T_rn_p.row(1)<<0.0,1.0/((R_E+insLLH(2))*cos(insLLH(0))),0.0;
         T_rn_p.row(2)<<0.0,0.0,-1.0;
-double gg=9.80665;
+        double gg=9.80665;
 
 // TODO: Revisit here!! it should be for adis 16488, these are for 95
         double sig_gyro_inRun = 1.6*INS::PI/180/3600; //rad/s
@@ -800,9 +800,9 @@ double gg=9.80665;
 
         CoreNav::Matrix Q(15,15);
         Q<<Q11,Q12,Q13,Q14,Q15,
-        Q21,Q22,Q23,Q24,Q25,
-        Q31,Q32,Q33,Q34,Q35,
-        Q41,Q42,Q43,Q44,Q45,
-        Q51,Q52,Q53,Q54,Q55;
+                Q21,Q22,Q23,Q24,Q25,
+                Q31,Q32,Q33,Q34,Q35,
+                Q41,Q42,Q43,Q44,Q45,
+                Q51,Q52,Q53,Q54,Q55;
         return Q;
 }

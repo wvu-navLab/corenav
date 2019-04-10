@@ -9,6 +9,7 @@ load LongRunData.mat % LshapeData.mat %ForwardDrive.mat
 odom
 %% initialize variables
 LongRunInit % LshapeInit.mat %ForwardDriveInit.mat
+
 %% Double Low Pass Filter
 dema
 for i=2:L
@@ -40,15 +41,15 @@ for i=2:L
     Q=getQins(F21,Cb2nPlus,insLLH(:,i),R_N,R_E,dtIMU);
     [~,q] = chol(Q);
     if q ~= 0
-    disp('Q matrix is not positive definite')
-    i
+        disp('Q matrix is not positive definite')
+        i
     end
     %% P matrix
     P = STM*P*STM' + Q;
     [~,p] = chol(P);
     if p ~= 0
-    disp('P matrix is not positive definite')
-    i
+        disp('P matrix is not positive definite')
+        i
     end
     if odomUpdate()
         %% --------------------------------------------------------------------
@@ -81,7 +82,7 @@ for i=2:L
     PStore{1,i}=P;
     STMStore{1,i}=STM+eye(15).*x_err;
     if kk<min(min(length(heading),length(lin_x))) % Only valid for post-processing
-
+        
         %% ----------------------------------------------------------------
         if tTimu(i)>=tTodom(kk) % Odometry update is available
             bb(counter)=i; % counts for the number of `i` when the loop goes into odometry updates
@@ -90,7 +91,7 @@ for i=2:L
             %% Odometry Update
             if odomUpdate()
                 odomUptCount=odomUptCount+1;
-
+                
                 P_old=P;
                 insAtt_old= insAtt(:,i);
                 insVel_old= insVel(:,i);
@@ -104,9 +105,9 @@ for i=2:L
                 S=postFitOdom.H*P*postFitOdom.H'+[0.00045,0,0,0;0,0.1152,0,0;0,0,0.0025,0;0,0,0,0.0025];
                 chisq(:,odomUptCount)=odompostfit(:,odomUptCount)'*inv(S)*odompostfit(:,odomUptCount);
                 mahala(:,odomUptCount)=sqrt(odompostfit(:,odomUptCount)'*inv(S)*odompostfit(:,odomUptCount));
-
+                
                 if mahala(1,odomUptCount)>5
-
+                    
                     %                     insAtt(:,i)=insAtt_old;
                     %                     insVel(:,i)=insVel_old;
                     %                     insLLH(:,i)=insLLH_old;
@@ -142,7 +143,7 @@ for i=2:L
             kk=kk+1;
         end % odom update not available
         %% ----------------------------------------------------------------
-
+        
         if abs(lin_x(kk))<0.04% triggers zupt
             zeroUptCount=zeroUptCount+1;
             if zeroUpdate()
@@ -155,7 +156,7 @@ for i=2:L
             zCtr(i)=0;
             offsetCtr=offsetCtr+1;
         end % zero update not available
-
+        
         if backProp()
             if zCtr(i)-zCtr(i-1) < 0 % checks the zero update counter diff. If it is > 0 ZeroUpdate applied
                 doBackProp=false;
@@ -185,29 +186,65 @@ for i=2:L
                 end % doBackProp
             end % if ZeroUpdate applied
         else
-                    ba(1:3,i)=x_err(10:12); % acce bias, this value will be removed from IMU acce output
-                    bg(1:3,i)=x_err(13:15); 
+            %                     ba(1:3,i)=x_err(10:12); % acce bias, this value will be removed from IMU acce output
+            %                     bg(1:3,i)=x_err(13:15);
         end
     end
-
+    
     sig1(i)=3*sqrt(abs(P(1,1))); % 3 sigma values of att_x -roll
     sig2(i)=3*sqrt(abs(P(2,2))); % 3 sigma values of att_y -pitch
     sig3(i)=3*sqrt(abs(P(3,3))); % 3 sigma values of att_z -yaw
-
+    
     sig4(i)=3*sqrt(abs(P(4,4))); % 3 sigma values of vel_x -forward
     sig5(i)=3*sqrt(abs(P(5,5))); % 3 sigma values of vel_y -left
     sig6(i)=3*sqrt(abs(P(6,6))); % 3 sigma values of vel_z -down
-
+    
     sig7(i)=3*sqrt(abs(P(7,7))); % 3 sigma values of pos_x -latitude
     sig8(i)=3*sqrt(abs(P(8,8))); % 3 sigma values of pos_y -longitude
     sig9(i)=3*sqrt(abs(P(9,9))); % 3 sigma values of pos_z -height
     if gpsResults()
-    gpsLonger(:,i)=[llhGPS(1,kk);llhGPS(2,kk);llhGPS(end,kk)];
+        gpsLonger(:,i)=[llhGPS(1,kk);llhGPS(2,kk);llhGPS(end,kk)];
     end
     x_State(:,i)=[insAtt(:,i);insVel(:,i);insLLH(:,i);ba(:,i);bg(:,i)];
     Cn2b_corr= eulr2dcm(insAtt(:,i));
     insAttCorr(:,i)=dcm2eulr((eye(3)-skewsymm(x_err(1:3)))*Cn2b_corr');
     insVelCorr(:,i)=insVel(:,i)-x_err(4:6);
     insLLHCorr(:,i)=insLLH(:,i)-x_err(7:9);
+    
+    
+if contactAngle()
+pitch=insAtt(2,i)*180/pi;
+pitch_rate=((insAtt(2,i)-insAtt(2,i-1))*180/pi)/dtIMU;
+wheelCenterSpeedFront=frontRightVel(kk)*0.1651;
+wheelCenterSpeedBack=rearLeftVel(kk)*0.1651;
+
+% if abs(pitch_rate)<1 && wheelCenterSpeedFront==0 && wheelCenterSpeedBack==0 % (pg:41)
+if wheelCenterSpeedFront==0 && wheelCenterSpeedBack==0 % (pg:41)
+
+%   disp('Robot is stationary, infinite set of angles')
+  x_gamma(:,i)=x_gamma(:,i-1);
+else
+  x_gamma(:,i)=x_gamma(:,i-1);
+  R_gamma=diag([0.001^2, 0.001^2]);
+  P_gamma=P_gamma+R_gamma;
+  [x_gamma(:,i),P_gamma]=wheelTerrainContactAngle(pitch,pitch_rate,wheelCenterSpeedFront,wheelCenterSpeedBack,x_gamma(:,i-1),P_gamma);
+  psig1(i)=P_gamma(1,1);
+  psig2(i)=P_gamma(2,2);
+  if cos(x_gamma(2,i)-pitch)==0
+      if wheelCenterSpeedFront==-wheelCenterSpeedBack
+        disp('Pure Rotation Occurred')
+        x_gamma(1,i)=pitch+pi/2 * sign(pitch_rate);
+        x_gamma(2,i)=pitch-pi/2 * sign(pitch_rate);
+      elseif pitch_rate==0 && wheelCenterSpeedFront==wheelCenterSpeedBack
+        disp('Pure Translation Occurred, using previous solution')
+        x_gamma(:,i)=x_gamma(:,i-1);
+      end
+    end
+end
+% end
+  psig1(i)=P_gamma(1,1);
+  psig2(i)=P_gamma(2,2);
+end    
+    
 end
 figureGeneration

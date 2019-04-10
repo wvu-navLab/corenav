@@ -94,9 +94,13 @@ offsetCtr=0;
 aaa=1;
 zeroUptCount=0;
 odomUptCount=1;
+
+x_gamma(:,1)=[0;0];
+P_gamma=[0,0;0,0];
 %% updates
-odomUpdate=false;
+odomUpdate=true;
 zeroUpdate=true;
 nonHolo=true;
 backProp=false;
 gpsResults=true;
+contactAngle=true;

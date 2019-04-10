@@ -263,6 +263,24 @@ view(-73,40)
 hold off
 legend({'Filter Estimate','GPS Solution', 'Covariance Ellipse'})
 
+if contactAngle()
+h(9)=figure;
+fill( [tTimu(1:end-1,1)'-tTimu(1) fliplr(tTimu(1:end-1,1)'-tTimu(1))],  [3*sqrt(psig1)+x_gamma(1,:) fliplr(-3*sqrt(psig1)+x_gamma(1,:))], 'b','FaceAlpha',.25,'DisplayName','3\sigma Covariance Hull' );
+hold on
+plot(tTimu(1:end-1,1)-tTimu(1),(x_gamma(1,:)),'.b','DisplayName','FrontWheelContactAngle_{est}')
+hold on
+plot(tTimu(1:end-1,1)-tTimu(1),(insAtt(2,:)*180/pi),'-k','DisplayName','INSPitchAngle_{est}')
+hold on
+fill( [tTimu(1:end-1,1)'-tTimu(1) fliplr(tTimu(1:end-1,1)'-tTimu(1))],  [3*sqrt(psig2)+x_gamma(2,:) fliplr(-3*sqrt(psig2)+x_gamma(2,:))], 'r','FaceAlpha',.25,'DisplayName','3\sigma Covariance Hull' );
+hold on
+plot(tTimu(1:end-1,1)-tTimu(1),(x_gamma(2,:)),'.r','DisplayName','RearWheelContactAngle_{est}')
+
+grid on
+ylabel('Angle (deg)')
+xlabel('Time (s)')
+legend('show','Location','northwest')
+end
+
 % [envHigh, envLow] = envelope(ENUGPS(1,:),16,'peak');
 % envMean = (envHigh+envLow)/2;
 % 
