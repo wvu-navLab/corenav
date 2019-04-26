@@ -342,6 +342,7 @@ void CoreNav::Propagate(const CoreNav::Vector6& imu, const CoreNav::Vector4& joi
         z21_ += cos(ins_att_(1))*dt_imu_;
         z31_ += tmp[1] * dt_imu_;
         z41_ += tmp[2] * dt_imu_;
+        CoreNav::NonHolonomic(ins_vel_, ins_att_, ins_pos_, error_states_, P-, omega_b_ib_))
 
         if ( std::abs(odo[7]) <0.004) { // TODO: Revisit here
 
@@ -616,6 +617,49 @@ CoreNav::Vector3 CoreNav::dcm_to_eul(CoreNav::Matrix3 dcm)
         eul << std::atan2(dcm(2,1), dcm(2,2)), std::asin(-1*dcm(2,0)), std::atan2(dcm(1,0), dcm(0,0));
         return eul;
 }
+// NonHolonomic Update
+void CoreNav::NonHolonomic(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 errorStates, Eigen::MatrixXd P, CoreNav::Vector3 omega_b_ib))
+{
+        CoreNav::Matrix3 Cnb = CoreNav::eul_to_dcm(att[0],att[1],att[2]);
+        CoreNav::Matrix3 ins_vel_ss;         //ins_vel_ skew symmetric
+        // ins_vel_ss = CoreNav::skew_symm(omega_b_ib);
+        // CoreNav::Vector3 Val_H21(0,cos(ins_att_(0)),sin(ins_att_(0)));
+        CoreNav::Vector3 z_holo1;
+        CoreNav::Vector3 z_holo2;
+        z_holo1 = -eye3.row(1)*(Cnb*vel-CoreNav::skew_symm(omega_b_ib)*(-0.272*(eye3.col(0))));
+        z_holo2 = -eye3.row(2)*(Cnb*vel-CoreNav::skew_symm(omega_b_ib)*(-0.272*(eye3.col(0))));
+
+        H_holo.row(0)<<zeros3.row(0), -eye3.row(1)*Cnb, zeros3.row(0), zeros3.row(0),zeros3.row(0);
+        H_holo.row(1)<<zeros3.row(0), -eye3.row(2)*Cnb,  zeros3.row(0), H24_.transpose(), zeros3.row(0);
+
+        Matrix R_holo= ( Matrix(2,2) << (0.05,0,0,0.05).finished();
+
+
+        K_holo = P_ * H_holo.transpose() * (H_holo * P_ * H_holo.transpose() + R_zupt).inverse();
+
+        error_states_ = error_states_ + K_holo* (z_holo  - H_holo * error_states_);
+
+        ins_att_ = CoreNav::dcm_to_eul((Eigen::MatrixXd::Identity(3,3)- CoreNav::skew_symm(error_states_.segment(0,3)))*Cnb.transpose());
+        ins_vel_ = ins_vel_ - error_states_.segment(3,3);
+        ins_pos_ = ins_pos_ - error_states_.segment(6,3);
+
+        error_states_(0)=0.0;
+        error_states_(1)=0.0;
+        error_states_(2)=0.0;
+
+        error_states_(3)=0.0;
+        error_states_(4)=0.0;
+        error_states_(5)=0.0;
+
+        error_states_(6)=0.0;
+        error_states_(7)=0.0;
+        error_states_(8)=0.0;
+
+        P_=(Eigen::MatrixXd::Identity(15,15) - K_holo * H_holo) * P_ * ( Eigen::MatrixXd::Identity(15,15) - K_holo * H_holo ).transpose() + K_holo * R_holo * K_holo.transpose();
+
+        return;
+}
+
 
 // Zero vel. update
 void CoreNav::zupt(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 errorStates, Eigen::MatrixXd P)

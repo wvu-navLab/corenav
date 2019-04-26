@@ -97,6 +97,8 @@ void JointCallBack(const JointData& joint_data_);
 void Update(const CoreNav::Vector13& odo);
 void Propagate(const CoreNav::Vector6& imu, const CoreNav::Vector4& joint);
 
+void NonHolonomic(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 errorStates, Eigen::MatrixXd P, CoreNav::Vector3 omega_b_ib));
+
 //Zero vel update
 void zupt(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 errorStates, Eigen::MatrixXd P);
 // Zero ang. update
