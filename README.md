@@ -17,4 +17,4 @@ If you use this work in an academic context, please cite the following publicati
 
 ## IROS Review
 
-To generate the same figures in the paper, simply run MainRun.m
+To generate the same figures in the paper, use [v.1.0](https://github.com/wvu-navLab/CLN/tree/v1.0) and simply run MainRun.m
