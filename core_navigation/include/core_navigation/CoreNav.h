@@ -96,9 +96,8 @@ private:
 
         void Update(const CoreNav::Vector13& odo);
         void Propagate(const CoreNav::Vector6& imu, const CoreNav::Vector4& joint);
-
+//NonHolonomic constraint
         void NonHolonomic(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 errorStates, Eigen::MatrixXd P, CoreNav::Vector3 omega_b_ib);
-
 //Zero vel update
         void zupt(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 errorStates, Eigen::MatrixXd P);
 // Zero ang. update
@@ -190,8 +189,7 @@ private:
         CoreNav::Matrix3 Omega_b_ib_, Omega_n_ie_, Omega_n_en_;
 
 // imu noise params
-        double accel_sigma_, accel_rw_, gyro_sigma_, gyro_rw_;
-
+        double sig_gyro_inRun_, sig_ARW_,  sig_accel_inRun_, sig_VRW_;
 // filter noise params
         double position_noise_, attitude_noise_, velocity_noise_, bias_noise_;
 

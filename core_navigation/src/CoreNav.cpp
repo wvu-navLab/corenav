@@ -82,9 +82,9 @@ bool CoreNav::Init(const ros::NodeHandle& n){
         Eigen::MatrixXd P= Eigen::MatrixXd::Zero(15,15);
         P(0,0)=1.218469679146834e-06; P(1,1)=1.218469679146834e-06; P(2,2)=4.873878716587337e-06;
         P(3,3)=4.000000000000001e-07; P(4,4)=4.000000000000001e-07; P(5,5)=4.000000000000001e-07;
-        P(6,6)=1.21846967914683e-14; P(7,7)=1.21846967914683e-14; P(8,8)=100.0;
-        P(9,9)=-0.011428207234497;   P(10,10)=0.008740805264598; P(11,11)=0.013108032973440;
-        P(12,12)=-8.805993629556402e-04; P(13,13)=9.874592038800420e-04;  P(14,14)=8.985670378275259e-04;
+        P(6,6)=1.218469679146834e-14; P(7,7)=1.218469679146834e-14; P(8,8)=0.010000000000000;
+        P(9,9)=7.549135895545244e-04;   P(10,10)=0.001805886718248; P(11,11)=0.002395586011438;
+        P(12,12)=8.674066138832567e-05; P(13,13)=1.005391303275586e-04;  P(14,14)=8.919962404601004e-05;
 
         ba_(0) = P(9,9);
         ba_(1) = P(10,10);
@@ -93,18 +93,19 @@ bool CoreNav::Init(const ros::NodeHandle& n){
         bg_(1) = P(13,13);
         bg_(2) = P(14,14);
 
-        R_ << 0.0004,0,0,0,
+        R_ << 0.00045,0,0,0,
         0,0.1152,0,0,
         0,0,0.0025,0,
         0,0,0,0.0025;
 
-        R_zupt << std::pow(0.012,2),0,0, // TODO: Revisit here
-        0,std::pow(0.012,2),0,
-        0,0,std::pow(0.012,2);
+        R_zupt << std::pow(0.02,2),0,0, // TODO: Revisit here
+        0,std::pow(0.02,2),0,
+        0,0,std::pow(0.02,2);
 
         R_zaru << std::pow(0.01,2),0,0, // TODO: Revisit here
         0,std::pow(0.01,2),0,
         0,0,std::pow(0.0025,2);
+
         R_holo << 0.05,0,0,0.05;
 
         H11_<< 0.0,0.0,0.0;
@@ -127,7 +128,7 @@ bool CoreNav::Init(const ros::NodeHandle& n){
         ins_att_ << init_roll, init_pitch, init_yaw;
         ins_vel_ << init_vx, init_vy, init_vz;
         ins_pos_ << init_x, init_y, init_z;
-        //ins_enu_ <<0.0,0.0,0.0;
+        // ins_enu_ <<0.0,0.0,0.0;
         return true;
 }
 
@@ -148,10 +149,10 @@ bool CoreNav::LoadParameters(const ros::NodeHandle& n){
         if(!pu::Get("imu/sensor_pub_rate", sensor_pub_rate_)) return false;
 
         // Load imu noise specs
-        if(!pu::Get("imu/noise/accel_noise_sigma", accel_sigma_)) return false;
-        if(!pu::Get("imu/noise/gyro_noise_sigma", gyro_sigma_)) return false;
-        if(!pu::Get("imu/noise/accel_bias_rw_sigma", accel_rw_)) return false;
-        if(!pu::Get("imu/noise/gyro_bias_rw_sigma", gyro_rw_)) return false;
+        if(!pu::Get("imu/noise/sig_gyro_inRun", sig_gyro_inRun_)) return false;
+        if(!pu::Get("imu/noise/sig_ARW", sig_ARW_)) return false;
+        if(!pu::Get("imu/noise/sig_accel_inRun", sig_accel_inRun_)) return false;
+        if(!pu::Get("imu/noise/sig_VRW", sig_VRW_)) return false;
 
         // Load initial position and orientation.
         if (!pu::Get("init/position/x", init_x)) return false;
@@ -220,10 +221,10 @@ bool CoreNav::RegisterCallbacks(const ros::NodeHandle& n){
         // Create a local nodehandle to manage callback subscriptions.
         ros::NodeHandle nl(n);
 
-        position_pub_ = nl.advertise<geometry_msgs::PointStamped>( "position", 25, false);
-        velocity_pub_ = nl.advertise<geometry_msgs::PointStamped>( "velocity", 25, false);
-        attitude_pub_ = nl.advertise<geometry_msgs::PointStamped>( "attitude", 25, false);
-        enu_pub_ = nl.advertise<geometry_msgs::PointStamped>( "enu", 25, false);
+        position_pub_ = nl.advertise<geometry_msgs::PointStamped>( "position", 10, false);
+        velocity_pub_ = nl.advertise<geometry_msgs::PointStamped>( "velocity", 10, false);
+        attitude_pub_ = nl.advertise<geometry_msgs::PointStamped>( "attitude", 10, false);
+        enu_pub_ = nl.advertise<geometry_msgs::PointStamped>( "enu", 10, false);
 
         imu_sub_ = nl.subscribe(imu_topic_,  10, &CoreNav::ImuCallback, this);
         odo_sub_ = nl.subscribe(odo_topic_,  10, &CoreNav::OdoCallback, this);
@@ -282,7 +283,6 @@ void CoreNav::Propagate(const CoreNav::Vector6& imu, const CoreNav::Vector4& joi
         grav_ = CoreNav::calc_gravity(ins_pos_(0),ins_pos_(2));
         CoreNav::Vector3 ins_velMinus(ins_vel_);
         ins_vel_= ins_vel_ + V_n_ib +  (grav_ - (Omega_n_en_+2.0*(Omega_n_ie_))*ins_vel_)*dt_imu_;
-
         //------------------------------------------------------------------------------
         // Position Update -------------------------------------------------------------
         // input= insLLH(:,i-1),insVel(:,i),insVel(:,i-1),Ro,ecc,dtIMU
@@ -319,40 +319,44 @@ void CoreNav::Propagate(const CoreNav::Vector6& imu, const CoreNav::Vector4& joi
         CoreNav::Vector3 omega_b_ei=-1.0*omega_b_ie;
         CoreNav::Vector3 omega_b_eb=omega_b_ei+omega_b_ib_;
 
-        CoreNav::Matrix3 ins_vel_ss;         //ins_vel_ skew symmetric
-        ins_vel_ss = CoreNav::skew_symm(ins_vel_);
-        CoreNav::Vector3 Val_H21(0,cos(ins_att_(0)),sin(ins_att_(0)));
+        if (has_odo_)
+        {
+                CoreNav::Matrix3 ins_vel_ss; //ins_vel_ skew symmetric
+                ins_vel_ss = CoreNav::skew_symm(ins_vel_);
+                CoreNav::Vector3 Val_H21(0,cos(ins_att_(0)),sin(ins_att_(0)));
 
-        H11_ += eye3.row(0)*Cn2bPlus*ins_vel_ss*dt_imu_;
-        H12_ += eye3.row(0)*Cn2bPlus*dt_imu_;
-        H21_ += sin(ins_att_(1))*Val_H21.transpose()*Cn2bPlus*dt_imu_;
-        H31_ += eye3.row(1)*Cn2bPlus*ins_vel_ss*dt_imu_;
-        H32_ += eye3.row(1)*Cn2bPlus*dt_imu_;
-        H41_ += eye3.row(2)*Cn2bPlus*ins_vel_ss*dt_imu_;
-        H42_ += eye3.row(2)*Cn2bPlus*dt_imu_;
+                H11_ += eye3.row(0)*Cn2bPlus*ins_vel_ss*dt_imu_;
+                H12_ += eye3.row(0)*Cn2bPlus*dt_imu_;
+                H21_ += sin(ins_att_(1))*Val_H21.transpose()*Cn2bPlus*dt_imu_;
+                H31_ += eye3.row(1)*Cn2bPlus*ins_vel_ss*dt_imu_;
+                H32_ += eye3.row(1)*Cn2bPlus*dt_imu_;
+                H41_ += eye3.row(2)*Cn2bPlus*ins_vel_ss*dt_imu_;
+                H42_ += eye3.row(2)*Cn2bPlus*dt_imu_;
 
-        CoreNav::Matrix3 Omega_b_eb;
-        Omega_b_eb << 0.0, -1.0*omega_b_eb(2), omega_b_eb(1),
-        omega_b_eb(2), 0.0, -1.0*omega_b_eb(0),
-        -1.0*omega_b_eb(1), omega_b_eb(0), 0.0;
+                CoreNav::Matrix3 Omega_b_eb;
+                Omega_b_eb << 0.0, -1.0*omega_b_eb(2), omega_b_eb(1),
+                omega_b_eb(2), 0.0, -1.0*omega_b_eb(0),
+                -1.0*omega_b_eb(1), omega_b_eb(0), 0.0;
 
-        // Measurement Innovation -- integration part for INS -- eq 16.42
-        Vector3 tmp = Cn2bPlus*ins_vel_ + Omega_b_eb*(-0.272*(eye3.col(0)));
+                // Measurement Innovation -- integration part for INS -- eq 16.42
+                Vector3 tmp = Cn2bPlus*ins_vel_ + Omega_b_eb*(-0.272*(eye3.col(0)));
 
-        z11_ += tmp[0]*dt_imu_;
-        z21_ += cos(ins_att_(1))*dt_imu_;
-        z31_ += tmp[1] * dt_imu_;
-        z41_ += tmp[2] * dt_imu_;
+                z11_ += tmp[0]*dt_imu_;
+                z21_ += cos(ins_att_(1))*dt_imu_;
+                z31_ += tmp[1] * dt_imu_;
+                z41_ += tmp[2] * dt_imu_;
+        }
+
         CoreNav::NonHolonomic(ins_vel_, ins_att_, ins_pos_, error_states_, P_, omega_b_ib_);
 
-        if ( std::abs(odo[7]) <0.004) { // TODO: Revisit here
-
+        if ( std::abs(odo[7]) <0.004) // TODO: Revisit here
+        {
                 CoreNav::zupt(ins_vel_, ins_att_, ins_pos_, error_states_, P_);
                 CoreNav::zaru(ins_vel_, ins_att_, ins_pos_, error_states_, P_, omega_b_ib_);
         }
-        if ( headRate_ == 0 ) {
-                CoreNav::zaru(ins_vel_, ins_att_, ins_pos_, error_states_, P_, omega_b_ib_);
-        }
+        // if ( headRate_ == 0 ) {
+        //         CoreNav::zaru(ins_vel_, ins_att_, ins_pos_, error_states_, P_, omega_b_ib_);
+        // }
         ba_(0)=error_states_(9);
         ba_(1)=error_states_(10);
         ba_(2)=error_states_(11);
@@ -382,7 +386,7 @@ void CoreNav::Propagate(const CoreNav::Vector6& imu, const CoreNav::Vector4& joi
         double z1 = (a*tmp2*sinphi)/tmp3 + h*sinphi;
         Vector3 p1(x1,y1,z1);
         // TODO:: Don't hardcode these params! Changes for every test
-        Vector3 p2(856503.7292,-4842984.4396,4047974.3219); // TODO: Revisit here
+        Vector3 p2(8.565078494000000e+05,-4.842978088500000e+06,4.047980191900000e+06); // TODO: Revisit here
         Vector3 posDiff = p1 - p2;
         Vector3 orgLLH(init_x, init_y, init_z);
         double sinPhi = sin(orgLLH(0));
@@ -405,12 +409,12 @@ void CoreNav::Update(const CoreNav::Vector13& odo)
 {
 
         dt_odo_ = odo_stamp_curr_ - odo_stamp_prev_;
-        double psiOld = init_yaw;
-        init_yaw=ins_att_(2);
+        // double psiOld = init_yaw;
+        // init_yaw=ins_att_(2);
         CoreNav::Matrix3 Cn2bUnc=CoreNav::eul_to_dcm(ins_att_(0),ins_att_(1),ins_att_(2));
         H11_ =-H11_/dt_odo_;
         H12_ =-H12_/dt_odo_;
-        H21_ = H21_*(ins_att_(2)-psiOld)/(dt_odo_*dt_odo_);
+        H21_ = H21_*(ins_att_(2)-init_yaw)/(dt_odo_*dt_odo_);
         H31_ =-H31_/dt_odo_;
         H32_ =-H32_/dt_odo_;
         H24_ =-(cos(ins_att_(1))*eye3.row(2)*Cn2bUnc.transpose())/dt_odo_;
@@ -456,7 +460,7 @@ void CoreNav::Update(const CoreNav::Vector13& odo)
         ins_vel_ << ins_vel_(0)-error_states_(3), ins_vel_(1)-error_states_(4), ins_vel_(2)-error_states_(5);
 
         ins_pos_ << ins_pos_(0)-error_states_(6), ins_pos_(1)-error_states_(7), ins_pos_(2)-error_states_(8);
-
+        init_yaw=ins_att_(2);
         error_states_(0)=0.0;
         error_states_(1)=0.0;
         error_states_(2)=0.0;
@@ -468,12 +472,12 @@ void CoreNav::Update(const CoreNav::Vector13& odo)
         error_states_(6)=0.0;
         error_states_(7)=0.0;
         error_states_(8)=0.0;
-        ba_(0)=error_states_(9);
-        ba_(1)=error_states_(10);
-        ba_(2)=error_states_(11);
-        bg_(0)=error_states_(12);
-        bg_(1)=error_states_(13);
-        bg_(2)=error_states_(14);
+        // ba_(0)=error_states_(9);
+        // ba_(1)=error_states_(10);
+        // ba_(2)=error_states_(11);
+        // bg_(0)=error_states_(12);
+        // bg_(1)=error_states_(13);
+        // bg_(2)=error_states_(14);
 
 
         P_=(Eigen::MatrixXd::Identity(15,15) - K_*H_) * P_ * ( Eigen::MatrixXd::Identity(15,15) - K_ * H_ ).transpose() + K_ * R_ * K_.transpose();
@@ -619,28 +623,27 @@ CoreNav::Vector3 CoreNav::dcm_to_eul(CoreNav::Matrix3 dcm)
         return eul;
 }
 // NonHolonomic Update
-void CoreNav::NonHolonomic(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 errorStates, Eigen::MatrixXd P, CoreNav::Vector3 omega_b_ib)
+void CoreNav::NonHolonomic(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 error_states, Eigen::MatrixXd P, CoreNav::Vector3 omega_b_ib)
 {
-        CoreNav::Matrix3 Cnb = CoreNav::eul_to_dcm(att[0],att[1],att[2]);
-        CoreNav::Matrix3 ins_vel_ss;         //ins_vel_ skew symmetric
-        // ins_vel_ss = CoreNav::skew_symm(omega_b_ib);
-        // CoreNav::Vector3 Val_H21(0,cos(ins_att_(0)),sin(ins_att_(0)));
+
+
+
+CoreNav::Matrix3 Cnb = CoreNav::eul_to_dcm(att[0],att[1],att[2]);
         CoreNav::Vector3 z_holo1;
         CoreNav::Vector3 z_holo2;
         z_holo.row(0) = -eye3.row(1)*(Cnb*vel-CoreNav::skew_symm(omega_b_ib)*(-0.272*(eye3.col(0))));
         z_holo.row(1) = -eye3.row(2)*(Cnb*vel-CoreNav::skew_symm(omega_b_ib)*(-0.272*(eye3.col(0))));
 
-        H_holo.row(0)<<zeros3.row(0), -eye3.row(1)*Cnb, zeros3.row(0), zeros3.row(0),zeros3.row(0);
-        H_holo.row(1)<<zeros3.row(0), -eye3.row(2)*Cnb,  zeros3.row(0), H24_.transpose(), zeros3.row(0);
+        H_holo.row(0)<<zeros3.row(0), -eye3.row(1)*Cnb, zeros3.row(0), zeros3.row(0), zeros3.row(0);
+        H_holo.row(1)<<zeros3.row(0), -eye3.row(2)*Cnb, zeros3.row(0), zeros3.row(0), zeros3.row(0);
 
 
-        K_holo = P_ * H_holo.transpose() * (H_holo * P_ * H_holo.transpose() + R_holo).inverse();
+        K_holo = P * H_holo.transpose() * (H_holo * P * H_holo.transpose() + R_holo).inverse();
 
-        error_states_ = error_states_ + K_holo* (z_holo  - H_holo * error_states_);
-
+        error_states_ = error_states + K_holo* (z_holo  - H_holo * error_states);
         ins_att_ = CoreNav::dcm_to_eul((Eigen::MatrixXd::Identity(3,3)- CoreNav::skew_symm(error_states_.segment(0,3)))*Cnb.transpose());
-        ins_vel_ = ins_vel_ - error_states_.segment(3,3);
-        ins_pos_ = ins_pos_ - error_states_.segment(6,3);
+        ins_vel_ = vel - error_states_.segment(3,3);
+        ins_pos_ = llh - error_states_.segment(6,3);
 
         error_states_(0)=0.0;
         error_states_(1)=0.0;
@@ -654,27 +657,27 @@ void CoreNav::NonHolonomic(const CoreNav::Vector3 vel, const CoreNav::Vector3 at
         error_states_(7)=0.0;
         error_states_(8)=0.0;
 
-        P_=(Eigen::MatrixXd::Identity(15,15) - K_holo * H_holo) * P_ * ( Eigen::MatrixXd::Identity(15,15) - K_holo * H_holo ).transpose() + K_holo * R_holo * K_holo.transpose();
+        P_=(Eigen::MatrixXd::Identity(15,15) - K_holo * H_holo) * P * ( Eigen::MatrixXd::Identity(15,15) - K_holo * H_holo ).transpose() + K_holo * R_holo * K_holo.transpose();
 
         return;
 }
 
 
 // Zero vel. update
-void CoreNav::zupt(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 errorStates, Eigen::MatrixXd P)
+void CoreNav::zupt(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 error_states, Eigen::MatrixXd P)
 {
         CoreNav::Matrix3 Cnb = CoreNav::eul_to_dcm(att[0],att[1],att[2]);
 
         CoreNav::Vector3 z_zupt;
         z_zupt = -vel;
 
-        K_zupt = P_ * H_zupt.transpose() * (H_zupt * P_ * H_zupt.transpose() + R_zupt).inverse();
+        K_zupt = P * H_zupt.transpose() * (H_zupt * P * H_zupt.transpose() + R_zupt).inverse();
 
-        error_states_ = error_states_ + K_zupt * (z_zupt  - H_zupt * error_states_);
+        error_states_ = error_states + K_zupt * (z_zupt  - H_zupt * error_states);
 
         ins_att_ = CoreNav::dcm_to_eul((Eigen::MatrixXd::Identity(3,3)- CoreNav::skew_symm(error_states_.segment(0,3)))*Cnb.transpose());
-        ins_vel_ = ins_vel_ - error_states_.segment(3,3);
-        ins_pos_ = ins_pos_ - error_states_.segment(6,3);
+        ins_vel_ = vel - error_states_.segment(3,3);
+        ins_pos_ = llh - error_states_.segment(6,3);
 
         error_states_(0)=0.0;
         error_states_(1)=0.0;
@@ -688,13 +691,13 @@ void CoreNav::zupt(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const
         error_states_(7)=0.0;
         error_states_(8)=0.0;
 
-        P_=(Eigen::MatrixXd::Identity(15,15) - K_zupt * H_zupt) * P_ * ( Eigen::MatrixXd::Identity(15,15) - K_zupt * H_zupt ).transpose() + K_zupt * R_zupt * K_zupt.transpose();
+        P_=(Eigen::MatrixXd::Identity(15,15) - K_zupt * H_zupt) * P * ( Eigen::MatrixXd::Identity(15,15) - K_zupt * H_zupt ).transpose() + K_zupt * R_zupt * K_zupt.transpose();
 
         return;
 }
 
 // Zero ang. update
-void CoreNav::zaru(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 errorStates, Eigen::MatrixXd P, const CoreNav::Vector3 omega_b_ib)
+void CoreNav::zaru(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 error_states, Eigen::MatrixXd P, const CoreNav::Vector3 omega_b_ib)
 {
 
         CoreNav::Matrix3 Cnb = CoreNav::eul_to_dcm(att[0],att[1],att[2]);
@@ -702,13 +705,13 @@ void CoreNav::zaru(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const
         CoreNav::Vector3 z_zaru;
         z_zaru = -omega_b_ib.transpose();
 
-        K_zaru = P_ * H_zaru.transpose() * (H_zaru * P_ * H_zaru.transpose() + R_zaru).inverse();
+        K_zaru = P * H_zaru.transpose() * (H_zaru * P * H_zaru.transpose() + R_zaru).inverse();
 
-        error_states_ = error_states_ + K_zaru * (z_zaru  - H_zaru * error_states_);
+        error_states_ = error_states + K_zaru * (z_zaru  - H_zaru * error_states);
 
         ins_att_ = CoreNav::dcm_to_eul((Eigen::MatrixXd::Identity(3,3)- CoreNav::skew_symm(error_states_.segment(0,3)))*Cnb.transpose());
-        ins_vel_ = ins_vel_ - error_states_.segment(3,3);
-        ins_pos_ = ins_pos_ - error_states_.segment(6,3);
+        ins_vel_ = vel - error_states_.segment(3,3);
+        ins_pos_ = llh - error_states_.segment(6,3);
 
         error_states_(0)=0.0;
         error_states_(1)=0.0;
@@ -722,7 +725,7 @@ void CoreNav::zaru(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const
         error_states_(7)=0.0;
         error_states_(8)=0.0;
 
-        P_=(Eigen::MatrixXd::Identity(15,15) - K_zaru * H_zaru) * P_ * ( Eigen::MatrixXd::Identity(15,15) - K_zaru * H_zaru ).transpose() + K_zaru * R_zaru * K_zaru.transpose();
+        P_=(Eigen::MatrixXd::Identity(15,15) - K_zaru * H_zaru) * P * ( Eigen::MatrixXd::Identity(15,15) - K_zaru * H_zaru ).transpose() + K_zaru * R_zaru * K_zaru.transpose();
         return;
 }
 
