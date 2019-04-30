@@ -9,6 +9,8 @@ Improved Planetary Rover Inertial Navigation and Wheel Odometry Performance thro
 Affiliation: [WVU NAVLAB](https://navigationlab.wvu.edu/)<br />
 Maintainer: Cagri Kilic, cakilic@mix.wvu.edu**
 
+<img alt="Elevation Map Example" src="core_navigation_demos/doc/architecturev2.png" width="700">
+
 ### Publications
 
 If you use this work in an academic context, please cite the following publication:
