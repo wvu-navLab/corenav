@@ -52,155 +52,158 @@
 class CoreNav {
 public:
 
-typedef sensor_msgs::Imu ImuData;
-typedef nav_msgs::Odometry OdoData;
-typedef sensor_msgs::JointState JointData;
-typedef geometry_msgs::PoseStamped PoseData;
+        typedef sensor_msgs::Imu ImuData;
+        typedef nav_msgs::Odometry OdoData;
+        typedef sensor_msgs::JointState JointData;
+        typedef geometry_msgs::PoseStamped PoseData;
 
-typedef Eigen::VectorXd Vector;
-typedef Eigen::MatrixXd Matrix;
+        typedef Eigen::VectorXd Vector;
+        typedef Eigen::MatrixXd Matrix;
 
-typedef Eigen::Matrix<double, 3, 1> Vector3;
-typedef Eigen::Matrix<double, 4, 1> Vector4;
-typedef Eigen::Matrix<double, 6, 1> Vector6;
-typedef Eigen::Matrix<double, 13, 1> Vector13;
-typedef Eigen::Matrix<double, 15, 1> Vector15;
+        typedef Eigen::Matrix<double, 3, 1> Vector3;
+        typedef Eigen::Matrix<double, 4, 1> Vector4;
+        typedef Eigen::Matrix<double, 6, 1> Vector6;
+        typedef Eigen::Matrix<double, 13, 1> Vector13;
+        typedef Eigen::Matrix<double, 15, 1> Vector15;
 
-typedef Eigen::Matrix<double, 3, 3> Matrix3;
-Matrix3 CbnMinus;
-Matrix3 eye3=Eigen::Matrix3d::Identity();
-Matrix3 zeros3=Eigen::Matrix3d::Zero(3,3);
+        typedef Eigen::Matrix<double, 3, 3> Matrix3;
+        Matrix3 CbnMinus;
+        Matrix3 eye3=Eigen::Matrix3d::Identity();
+        Matrix3 zeros3=Eigen::Matrix3d::Zero(3,3);
 
-CoreNav::Vector13 odo;
-CoreNav::Vector6 imu;
-CoreNav::Vector4 joint;
+        CoreNav::Vector13 odo;
+        CoreNav::Vector6 imu;
+        CoreNav::Vector4 joint;
 
-CoreNav();
-~CoreNav();
+        CoreNav();
+        ~CoreNav();
 
 // Calls LoadParameters and RegisterCallbacks. Fails on failure of either.
-bool Initialize(const ros::NodeHandle& n);
+        bool Initialize(const ros::NodeHandle& n);
 
 private:
 // Node initialization
-bool Init(const ros::NodeHandle& n);
-bool LoadParameters(const ros::NodeHandle& n);
-bool RegisterCallbacks(const ros::NodeHandle& n);
+        bool Init(const ros::NodeHandle& n);
+        bool LoadParameters(const ros::NodeHandle& n);
+        bool RegisterCallbacks(const ros::NodeHandle& n);
 
 // Publish estimated  states.
-void PublishStates(const CoreNav::Vector3& states, const ros::Publisher& pub);
+        void PublishStates(const CoreNav::Vector3& states, const ros::Publisher& pub);
 
-void ImuCallback(const ImuData& imu_data_);
-void OdoCallback(const OdoData& odo_data_);
-void JointCallBack(const JointData& joint_data_);
+        void ImuCallback(const ImuData& imu_data_);
+        void OdoCallback(const OdoData& odo_data_);
+        void JointCallBack(const JointData& joint_data_);
 
-void Update(const CoreNav::Vector13& odo);
-void Propagate(const CoreNav::Vector6& imu, const CoreNav::Vector4& joint);
+        void Update(const CoreNav::Vector13& odo);
+        void Propagate(const CoreNav::Vector6& imu, const CoreNav::Vector4& joint);
 
-void NonHolonomic(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 errorStates, Eigen::MatrixXd P, CoreNav::Vector3 omega_b_ib));
+        void NonHolonomic(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 errorStates, Eigen::MatrixXd P, CoreNav::Vector3 omega_b_ib);
 
 //Zero vel update
-void zupt(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 errorStates, Eigen::MatrixXd P);
+        void zupt(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 errorStates, Eigen::MatrixXd P);
 // Zero ang. update
-void zaru(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 errorStates, Eigen::MatrixXd P, const CoreNav::Vector3 omega_b_ib);
+        void zaru(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 errorStates, Eigen::MatrixXd P, const CoreNav::Vector3 omega_b_ib);
 
-CoreNav::Vector3 calc_gravity(const double latitude, const double height);
-CoreNav::Matrix3 skew_symm(const CoreNav::Vector3 vec);
-CoreNav::Matrix3 eul_to_dcm(double phi, double theta, double psi);
-CoreNav::Vector3 dcm_to_eul(CoreNav::Matrix3 dcm);
-CoreNav::Matrix insErrorStateModel_LNF(double R_EPlus, double R_N, CoreNav::Vector3 insLLHPlus, CoreNav::Vector3 insVelPlus, double dt,CoreNav::Matrix3 CbnPlus, double omega_ie, CoreNav::Vector3 omega_n_in,Vector3 f_ib_b,double gravity);
-CoreNav::Matrix calc_Q(double R_N, double R_E, CoreNav::Vector3 insLLHPlus, double dt, CoreNav::Matrix3 CbnPlus, CoreNav::Vector3 f_ib_b);
+        CoreNav::Vector3 calc_gravity(const double latitude, const double height);
+        CoreNav::Matrix3 skew_symm(const CoreNav::Vector3 vec);
+        CoreNav::Matrix3 eul_to_dcm(double phi, double theta, double psi);
+        CoreNav::Vector3 dcm_to_eul(CoreNav::Matrix3 dcm);
+        CoreNav::Matrix insErrorStateModel_LNF(double R_EPlus, double R_N, CoreNav::Vector3 insLLHPlus, CoreNav::Vector3 insVelPlus, double dt,CoreNav::Matrix3 CbnPlus, double omega_ie, CoreNav::Vector3 omega_n_in,Vector3 f_ib_b,double gravity);
+        CoreNav::Matrix calc_Q(double R_N, double R_E, CoreNav::Vector3 insLLHPlus, double dt, CoreNav::Matrix3 CbnPlus, CoreNav::Vector3 f_ib_b);
 
-CoreNav::Vector6 getImuData(const ImuData& imu_data_);
-CoreNav::Vector4 getJointData(const JointData &joint_data_);
-CoreNav::Vector13 getOdoData(const OdoData& odo_data_);
+        CoreNav::Vector6 getImuData(const ImuData& imu_data_);
+        CoreNav::Vector4 getJointData(const JointData &joint_data_);
+        CoreNav::Vector13 getOdoData(const OdoData& odo_data_);
 
 // The node's name.
-std::string name_;
+        std::string name_;
 
 // Subscriber
-ros::Subscriber imu_sub_;
-ros::Subscriber odo_sub_;
-ros::Subscriber joint_sub_;
+        ros::Subscriber imu_sub_;
+        ros::Subscriber odo_sub_;
+        ros::Subscriber joint_sub_;
 
 // Publisher.
-ros::Publisher position_pub_, velocity_pub_, attitude_pub_, enu_pub_;
-tf::TransformBroadcaster transformed_states_tf_broad;
+        ros::Publisher position_pub_, velocity_pub_, attitude_pub_, enu_pub_;
+        tf::TransformBroadcaster transformed_states_tf_broad;
 
-OdoData odo_data_;
-OdoData odo_data_prev_;
-ImuData imu_data_;
-JointData joint_data_;
+        OdoData odo_data_;
+        OdoData odo_data_prev_;
+        ImuData imu_data_;
+        JointData joint_data_;
 
-bool has_odo_ = false;
-bool has_joint_ = false;
-bool has_imu_ = false;
-bool first_odo_ = true;
-bool first_joint_ = true;
-bool first_imu_ = true;
+        bool has_odo_ = false;
+        bool has_joint_ = false;
+        bool has_imu_ = false;
+        bool first_odo_ = true;
+        bool first_joint_ = true;
+        bool first_imu_ = true;
 
 // Most recent time stamp for publishers.
-ros::Time stamp_;
+        ros::Time stamp_;
 
 // Coordinate frames.
-std::string frame_id_out_;
-std::string frame_id_imu_;
-std::string frame_id_odo_;
-std::string frame_id_fixed_;
+        std::string frame_id_out_;
+        std::string frame_id_imu_;
+        std::string frame_id_odo_;
+        std::string frame_id_fixed_;
 
 // update rate [hz]
-unsigned int publish_hz_;
-unsigned int sensor_pub_rate_;
+        unsigned int publish_hz_;
+        unsigned int sensor_pub_rate_;
 
 // sub. topics
-std::string imu_topic_;
-std::string odo_topic_;
-std::string joint_topic_;
+        std::string imu_topic_;
+        std::string odo_topic_;
+        std::string joint_topic_;
 
 // For initialization.
-bool initialized_;
+        bool initialized_;
 
 // Filter vars.
-int num_states_ = 15;
-CoreNav::Vector15 error_states_; // {pos., vel, att, ba, bg}
-CoreNav::Vector3 ba_;
-CoreNav::Vector3 bg_;
-CoreNav::Vector3 ins_att_, ins_vel_, ins_pos_, ins_enu_;
-CoreNav::Vector4 Z_;
-CoreNav::Matrix P_, Q_, STM_;
-Eigen::Matrix<double, 4, 4> R_;
-Eigen::Matrix<double, 3, 3> R_zupt;
-Eigen::Matrix<double, 3, 3> R_zaru;
-Eigen::Matrix<double, 15, 4> K_;
-Eigen::Matrix<double, 15, 3> K_zupt;
-Eigen::Matrix<double, 15, 3> K_zaru;
-Eigen::Matrix<double, 4, 15> H_;
-Eigen::Matrix<double, 3, 15> H_zupt;
-Eigen::Matrix<double, 3, 15> H_zaru;
+        int num_states_ = 15;
+        CoreNav::Vector15 error_states_; // {pos., vel, att, ba, bg}
+        CoreNav::Vector3 ba_;
+        CoreNav::Vector3 bg_;
+        CoreNav::Vector3 ins_att_, ins_vel_, ins_pos_, ins_enu_;
+        CoreNav::Vector4 Z_;
+        CoreNav::Matrix P_, Q_, STM_;
+        Eigen::Matrix<double, 4, 4> R_;
+        Eigen::Matrix<double, 3, 3> R_zupt;
+        Eigen::Matrix<double, 3, 3> R_zaru;
+        Eigen::Matrix<double, 2, 2> R_holo;
+        Eigen::Matrix<double, 15, 4> K_;
+        Eigen::Matrix<double, 15, 3> K_zupt;
+        Eigen::Matrix<double, 15, 3> K_zaru;
+        Eigen::Matrix<double, 15, 2> K_holo;
+        Eigen::Matrix<double, 4, 15> H_;
+        Eigen::Matrix<double, 3, 15> H_zupt;
+        Eigen::Matrix<double, 3, 15> H_zaru;
+        Eigen::Matrix<double, 2, 15> H_holo;
+        Eigen::Matrix<double, 2, 1> z_holo;
+        CoreNav::Vector3 H11_, H12_, H21_, H31_, H32_, H24_, H41_, H42_;
+        double z11_, z21_, z31_, z41_;
+        double rearVel_, headRate_, T_r_, s_or_, s_delta_or_;
 
-CoreNav::Vector3 H11_, H12_, H21_, H31_, H32_, H24_, H41_, H42_;
-double z11_, z21_, z31_, z41_;
-double rearVel_, headRate_, T_r_, s_or_, s_delta_or_;
-
-CoreNav::Vector3 omega_b_ib_, omega_b_ib_prev_, omega_n_ie_;
-CoreNav::Vector3 f_ib_b_, f_ib_b_prev_, omega_n_en_, omega_n_in_, grav_;
-CoreNav::Matrix3 Omega_b_ib_, Omega_n_ie_, Omega_n_en_;
+        CoreNav::Vector3 omega_b_ib_, omega_b_ib_prev_, omega_n_ie_;
+        CoreNav::Vector3 f_ib_b_, f_ib_b_prev_, omega_n_en_, omega_n_in_, grav_;
+        CoreNav::Matrix3 Omega_b_ib_, Omega_n_ie_, Omega_n_en_;
 
 // imu noise params
-double accel_sigma_, accel_rw_, gyro_sigma_, gyro_rw_;
+        double accel_sigma_, accel_rw_, gyro_sigma_, gyro_rw_;
 
 // filter noise params
-double position_noise_, attitude_noise_, velocity_noise_, bias_noise_;
+        double position_noise_, attitude_noise_, velocity_noise_, bias_noise_;
 
 // initial pose
-double init_x, init_y, init_z, init_vx, init_vy, init_vz, psiEst;
-double init_roll, init_pitch, init_yaw, sigma_x, sigma_y;
-double sigma_z, sigma_vx, sigma_vy, prev_stamp_, up_time_;
-double sigma_vz, sigma_roll, sigma_pitch, sigma_yaw;
-double imu_stamp_curr_, imu_stamp_prev_, odo_stamp_curr_, odo_stamp_prev_;
-double joint_stamp_curr_, joint_stamp_prev_;
-double dt_odo_, dt_imu_;
-int count=0;
+        double init_x, init_y, init_z, init_vx, init_vy, init_vz, psiEst;
+        double init_roll, init_pitch, init_yaw, sigma_x, sigma_y;
+        double sigma_z, sigma_vx, sigma_vy, prev_stamp_, up_time_;
+        double sigma_vz, sigma_roll, sigma_pitch, sigma_yaw;
+        double imu_stamp_curr_, imu_stamp_prev_, odo_stamp_curr_, odo_stamp_prev_;
+        double joint_stamp_curr_, joint_stamp_prev_;
+        double dt_odo_, dt_imu_;
+        int count=0;
 
 };
 #endif

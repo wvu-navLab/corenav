@@ -94,17 +94,18 @@ bool CoreNav::Init(const ros::NodeHandle& n){
         bg_(2) = P(14,14);
 
         R_ << 0.0004,0,0,0,
-                0,0.1152,0,0,
-                0,0,0.0025,0,
-                0,0,0,0.0025;
+        0,0.1152,0,0,
+        0,0,0.0025,0,
+        0,0,0,0.0025;
 
         R_zupt << std::pow(0.012,2),0,0, // TODO: Revisit here
-                0,std::pow(0.012,2),0,
-                0,0,std::pow(0.012,2);
+        0,std::pow(0.012,2),0,
+        0,0,std::pow(0.012,2);
 
         R_zaru << std::pow(0.01,2),0,0, // TODO: Revisit here
-                0,std::pow(0.01,2),0,
-                0,0,std::pow(0.0025,2);
+        0,std::pow(0.01,2),0,
+        0,0,std::pow(0.0025,2);
+        R_holo << 0.05,0,0,0.05;
 
         H11_<< 0.0,0.0,0.0;
         H12_ << 0.0,0.0,0.0;
@@ -116,12 +117,12 @@ bool CoreNav::Init(const ros::NodeHandle& n){
         H42_ << 0.0,0.0,0.0;
 
         H_zupt << 0,0,0,-1,0,0,0,0,0,0,0,0,0,0,0,
-                0,0,0,0,-1,0,0,0,0,0,0,0,0,0,0,
-                0,0,0,0,0,-1,0,0,0,0,0,0,0,0,0;
+        0,0,0,0,-1,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,-1,0,0,0,0,0,0,0,0,0;
 
         H_zaru << 0,0,0,0,0,0,0,0,0,0,0,0,-1,0,0,
-                0,0,0,0,0,0,0,0,0,0,0,0,0,-1,0,
-                0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1;
+        0,0,0,0,0,0,0,0,0,0,0,0,0,-1,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1;
 
         ins_att_ << init_roll, init_pitch, init_yaw;
         ins_vel_ << init_vx, init_vy, init_vz;
@@ -245,7 +246,7 @@ void CoreNav::Propagate(const CoreNav::Vector6& imu, const CoreNav::Vector4& joi
         //------------------------------------------------------------------------------
         CoreNav::Matrix3 CnbMinus = CoreNav::eul_to_dcm(ins_att_[0],ins_att_[1],ins_att_[2]);
         CbnMinus=CnbMinus.transpose();
-        omega_n_ie_ << INS::omega_ie*cos(ins_pos_[0]), 0.0, (-1.0)*INS::omega_ie*sin(ins_pos_[0]);// Checked
+        omega_n_ie_ << INS::omega_ie*cos(ins_pos_[0]), 0.0, (-1.0)*INS::omega_ie*sin(ins_pos_[0]); // Checked
         Omega_b_ib_ = CoreNav::skew_symm( omega_b_ib_ );
         Omega_n_ie_ = CoreNav::skew_symm( omega_n_ie_ );
         // Radius of Curvature for North-South Motion (eq. 2.105)
@@ -332,8 +333,8 @@ void CoreNav::Propagate(const CoreNav::Vector6& imu, const CoreNav::Vector4& joi
 
         CoreNav::Matrix3 Omega_b_eb;
         Omega_b_eb << 0.0, -1.0*omega_b_eb(2), omega_b_eb(1),
-                omega_b_eb(2), 0.0, -1.0*omega_b_eb(0),
-                -1.0*omega_b_eb(1), omega_b_eb(0), 0.0;
+        omega_b_eb(2), 0.0, -1.0*omega_b_eb(0),
+        -1.0*omega_b_eb(1), omega_b_eb(0), 0.0;
 
         // Measurement Innovation -- integration part for INS -- eq 16.42
         Vector3 tmp = Cn2bPlus*ins_vel_ + Omega_b_eb*(-0.272*(eye3.col(0)));
@@ -342,7 +343,7 @@ void CoreNav::Propagate(const CoreNav::Vector6& imu, const CoreNav::Vector4& joi
         z21_ += cos(ins_att_(1))*dt_imu_;
         z31_ += tmp[1] * dt_imu_;
         z41_ += tmp[2] * dt_imu_;
-        CoreNav::NonHolonomic(ins_vel_, ins_att_, ins_pos_, error_states_, P-, omega_b_ib_))
+        CoreNav::NonHolonomic(ins_vel_, ins_att_, ins_pos_, error_states_, P_, omega_b_ib_);
 
         if ( std::abs(odo[7]) <0.004) { // TODO: Revisit here
 
@@ -580,8 +581,8 @@ CoreNav::Matrix3 CoreNav::skew_symm(const CoreNav::Vector3 vec)
 {
         CoreNav::Matrix3 ss;
         ss << 0.0, -1.0*vec(2), vec(1),
-                vec(2), 0.0, -1.0*vec(0),
-                -1.0*vec(1), vec(0), 0.0;
+        vec(2), 0.0, -1.0*vec(0),
+        -1.0*vec(1), vec(0), 0.0;
 
         return ss;
 }
@@ -618,7 +619,7 @@ CoreNav::Vector3 CoreNav::dcm_to_eul(CoreNav::Matrix3 dcm)
         return eul;
 }
 // NonHolonomic Update
-void CoreNav::NonHolonomic(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 errorStates, Eigen::MatrixXd P, CoreNav::Vector3 omega_b_ib))
+void CoreNav::NonHolonomic(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 errorStates, Eigen::MatrixXd P, CoreNav::Vector3 omega_b_ib)
 {
         CoreNav::Matrix3 Cnb = CoreNav::eul_to_dcm(att[0],att[1],att[2]);
         CoreNav::Matrix3 ins_vel_ss;         //ins_vel_ skew symmetric
@@ -626,16 +627,14 @@ void CoreNav::NonHolonomic(const CoreNav::Vector3 vel, const CoreNav::Vector3 at
         // CoreNav::Vector3 Val_H21(0,cos(ins_att_(0)),sin(ins_att_(0)));
         CoreNav::Vector3 z_holo1;
         CoreNav::Vector3 z_holo2;
-        z_holo1 = -eye3.row(1)*(Cnb*vel-CoreNav::skew_symm(omega_b_ib)*(-0.272*(eye3.col(0))));
-        z_holo2 = -eye3.row(2)*(Cnb*vel-CoreNav::skew_symm(omega_b_ib)*(-0.272*(eye3.col(0))));
+        z_holo.row(0) = -eye3.row(1)*(Cnb*vel-CoreNav::skew_symm(omega_b_ib)*(-0.272*(eye3.col(0))));
+        z_holo.row(1) = -eye3.row(2)*(Cnb*vel-CoreNav::skew_symm(omega_b_ib)*(-0.272*(eye3.col(0))));
 
         H_holo.row(0)<<zeros3.row(0), -eye3.row(1)*Cnb, zeros3.row(0), zeros3.row(0),zeros3.row(0);
         H_holo.row(1)<<zeros3.row(0), -eye3.row(2)*Cnb,  zeros3.row(0), H24_.transpose(), zeros3.row(0);
 
-        Matrix R_holo= ( Matrix(2,2) << (0.05,0,0,0.05).finished();
 
-
-        K_holo = P_ * H_holo.transpose() * (H_holo * P_ * H_holo.transpose() + R_zupt).inverse();
+        K_holo = P_ * H_holo.transpose() * (H_holo * P_ * H_holo.transpose() + R_holo).inverse();
 
         error_states_ = error_states_ + K_holo* (z_holo  - H_holo * error_states_);
 
@@ -784,10 +783,10 @@ CoreNav::Matrix CoreNav::insErrorStateModel_LNF(double R_EPlus, double R_N, Core
         CoreNav::Matrix STM(15,15);
 
         STM<<PHI11, PHI12, PHI13, Eigen::Matrix3d::Zero(3,3),PHI15,
-                PHI21, PHI22, PHI23, PHI24, Eigen::Matrix3d::Zero(3,3),
-                Eigen::Matrix3d::Zero(3,3), PHI32, PHI33, Eigen::Matrix3d::Zero(3,3), Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
-                Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
-                Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Identity(3,3);
+        PHI21, PHI22, PHI23, PHI24, Eigen::Matrix3d::Zero(3,3),
+        Eigen::Matrix3d::Zero(3,3), PHI32, PHI33, Eigen::Matrix3d::Zero(3,3), Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
+        Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Identity(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),
+        Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Zero(3,3),Eigen::Matrix3d::Identity(3,3);
 
         return STM;
 }
@@ -844,9 +843,9 @@ CoreNav::Matrix CoreNav::calc_Q(double R_N, double R_E, CoreNav::Vector3 insLLH,
 
         CoreNav::Matrix Q(15,15);
         Q<<Q11,Q12,Q13,Q14,Q15,
-                Q21,Q22,Q23,Q24,Q25,
-                Q31,Q32,Q33,Q34,Q35,
-                Q41,Q42,Q43,Q44,Q45,
-                Q51,Q52,Q53,Q54,Q55;
+        Q21,Q22,Q23,Q24,Q25,
+        Q31,Q32,Q33,Q34,Q35,
+        Q41,Q42,Q43,Q44,Q45,
+        Q51,Q52,Q53,Q54,Q55;
         return Q;
 }
