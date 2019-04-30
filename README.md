@@ -7,7 +7,7 @@ Improved Planetary Rover Inertial Navigation and Wheel Odometry Performance thro
 
 **Author: Cagri Kilic<br />
 Affiliation: [WVU NAVLAB](https://navigationlab.wvu.edu/)<br />
-Maintainer: PCagri Kilic, cakilic@mix.wvu.edu**
+Maintainer: Cagri Kilic, cakilic@mix.wvu.edu**
 
 ### Publications
 
