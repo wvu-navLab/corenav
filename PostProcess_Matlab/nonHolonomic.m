@@ -5,8 +5,8 @@ Cn2bUnc = eulr2dcm(insAtt_old);
 H32=-[0,1,0]*Cn2bUnc;
 H42=-[0,0,1]*Cn2bUnc;
 %% Measurement Innovation w/o time -- INS eq:16.42 --
-z31=-[0,1,0]*(Cn2bUnc*insVel_old- skewsymm(omega_b_ib)*[-A,0,0]');
-z41=-[0,0,1]*(Cn2bUnc*insVel_old- skewsymm(omega_b_ib)*[-A,0,0]');
+z31=-[0,1,0]*(Cn2bUnc*insVel_old- skewsymm(omega_b_ib)*[-A,0,0]')
+z41=-[0,0,1]*(Cn2bUnc*insVel_old- skewsymm(omega_b_ib)*[-A,0,0]')
 %% Measurement Matrix -- Checked
 H=[zeros(1,3), H32, zeros(1,3), zeros(1,3) zeros(1,3);
    zeros(1,3), H42, zeros(1,3), zeros(1,3) zeros(1,3)];
