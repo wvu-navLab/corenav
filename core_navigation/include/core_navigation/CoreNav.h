@@ -196,6 +196,11 @@ private:
 // initial pose
         double init_x, init_y, init_z, init_vx, init_vy, init_vz, psiEst;
         double init_roll, init_pitch, init_yaw, sigma_x, sigma_y;
+        double init_cov_x,init_cov_y,init_cov_z;
+        double init_cov_vx,init_cov_vy,init_cov_vz;
+        double init_cov_roll, init_cov_pitch, init_cov_yaw;
+        double init_ecef_x,init_ecef_y,init_ecef_z;
+        double init_ba_x, init_ba_y, init_ba_z, init_bg_x, init_bg_y, init_bg_z;
         double sigma_z, sigma_vx, sigma_vy, prev_stamp_, up_time_;
         double sigma_vz, sigma_roll, sigma_pitch, sigma_yaw;
         double imu_stamp_curr_, imu_stamp_prev_, odo_stamp_curr_, odo_stamp_prev_;
