@@ -3,14 +3,14 @@
 
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
-
+#include <fstream>
 #include <ros/ros.h>
+#include <ros/package.h>
 #include <sensor_msgs/Imu.h>
 #include <tf/transform_broadcaster.h>
 #include <geometry_utils/Transform3.h>
 #include <geometry_msgs/PointStamped.h>
 #include <message_filters/time_synchronizer.h>
-
 
 class InitCoreNav {
 public:
@@ -38,7 +38,7 @@ private:
 
 // Publish estimated  states.
         void PublishStates(const InitCoreNav::Vector3& states, const ros::Publisher& pub);
-
+        void writeParams(std::string path_to_param_file, const InitCoreNav::Vector3& bias_a, const InitCoreNav::Vector3& bias_g);
         void ImuCallback(const ImuData& imu_data_);
         void Propagate(const InitCoreNav::Vector6& imu);
 
@@ -79,7 +79,6 @@ private:
         bool initialized_;
 
 // Filter vars.
-        int num_states_ = 15;
         InitCoreNav::Vector3 bias_a_;
         InitCoreNav::Vector3 bias_g_;
         InitCoreNav::Vector3 ins_bias_a;
@@ -88,14 +87,9 @@ private:
         InitCoreNav::Vector3 omega_b_ib_;
         InitCoreNav::Vector3 f_ib_b_;
 
-// filter noise params
-        double position_noise_, attitude_noise_, velocity_noise_, bias_noise_;
-
 // initial pose
 
         double init_ba_x, init_ba_y, init_ba_z, init_bg_x, init_bg_y, init_bg_z;
-
-
         double imu_stamp_curr_, imu_stamp_prev_;
         double dt_imu_;
         int count=0;

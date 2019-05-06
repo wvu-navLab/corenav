@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   tf2_ros
   tf
+  roslib
 )
 
 catkin_package(
@@ -25,6 +26,7 @@ catkin_package(
     sensor_msgs
     tf2_ros
     tf
+    roslib
 )
 
 include_directories(

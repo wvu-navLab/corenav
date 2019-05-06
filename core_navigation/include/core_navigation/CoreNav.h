@@ -45,7 +45,6 @@
 #include <geometry_utils/Transform3.h>
 #include <geometry_msgs/PointStamped.h>
 #include <message_filters/time_synchronizer.h>
-
 #include <core_navigation/InsConst.h>
 #include <core_navigation/InsUtils.h>
 
