@@ -1,0 +1,28 @@
+<launch>
+  <!-- True for simulation, false for real-time and bagfiles -->
+  <param name="/use_sim_time" value="false"/>
+
+  <group ns="init_core_nav">
+    <!-- SLAM -->
+    <node pkg="init_core_nav"
+          name="init_core_nav"
+          type="init_core_nav_node"
+          output="screen">
+
+
+      <!-- Initial pose -->
+      <rosparam param="init">
+        position: {x: 0.691949695095547, y: -1.395750757746275, z: 312.2643980319930}
+        velocity: {vx: 0.0, vy: 0.0, vz: 0.0}
+        orientation: {qx: 0.737277336810124, qy: 0.0, qz: 0.0, qw: 0.675590207615660}
+        <!--position_sigma: {x: 1.0, y: 1.0, z: 1.0}
+        velocity_sigma: {vx: 0.1, vy: 0.1, vz: 0.1}
+        orientation_sigma: {roll: 0.02, pitch: 0.02, yaw: 0.02}-->
+      </rosparam>
+
+      <!-- Rates -->
+      <rosparam file="$(find init_core_nav)/config/parameters.yaml"/>
+
+    </node>
+  </group>
+</launch>
