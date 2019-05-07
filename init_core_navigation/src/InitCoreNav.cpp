@@ -128,8 +128,8 @@ void InitCoreNav::Propagate(const InitCoreNav::Vector6& imu){ // no joint
 if (count==200) {
   PublishStates(ins_bias_a, bias_a_pub_);
   PublishStates(ins_bias_g, bias_g_pub_);
-  ROS_INFO("Detected acceleration bias:\n %.6f\n %.6f \n %.6f ", ins_bias_a(0),ins_bias_a(1),ins_bias_a(2));
-  ROS_INFO("Detected gyroscope bias:\n %.6f\n %.6f \n %.6f ", ins_bias_g(0),ins_bias_g(1),ins_bias_g(2));
+  ROS_INFO("Detected acceleration bias:\n %.12f\n %.12f \n %.12f ", ins_bias_a(0),ins_bias_a(1),ins_bias_a(2));
+  ROS_INFO("Detected gyroscope bias:\n %.12f\n %.12f \n %.12f ", ins_bias_g(0),ins_bias_g(1),ins_bias_g(2));
 // //write params file
 std::string path =  ros::package::getPath("core_nav") + "/config/init_params.yaml";
 ROS_INFO("Writing calibration results to file...");
@@ -185,14 +185,14 @@ void InitCoreNav::writeParams(std::string path_to_param_file, const InitCoreNav:
         // paramsFile << std::fixed << std::setprecision(1) << "  delay: " << delay << std::endl;
 
         // Adding heading error to magnetic declination parameter to correct initial poor estimate
-        paramsFile << std::fixed << std::setprecision(5) << "  x: " << (ins_bias_a(0))<< std::endl;
-        paramsFile << std::fixed << std::setprecision(5) << "  y: " << (ins_bias_a(1))<< std::endl;
+        paramsFile << std::fixed << std::setprecision(12) << "  x: " << (ins_bias_a(0))<< std::endl;
+        paramsFile << std::fixed << std::setprecision(12) << "  y: " << (ins_bias_a(1))<< std::endl;
         paramsFile << std::fixed << std::setprecision(5) << "  z: " << (ins_bias_a(2))<< std::endl;
 
         paramsFile << "bias_g:" << std::endl;
-        paramsFile << std::fixed << std::setprecision(5) << "  x: " << (ins_bias_g(0))<< std::endl;
-        paramsFile << std::fixed << std::setprecision(5) << "  y: " << (ins_bias_g(1))<< std::endl;
-        paramsFile << std::fixed << std::setprecision(5) << "  z: " << (ins_bias_g(2))<< std::endl;
+        paramsFile << std::fixed << std::setprecision(12) << "  x: " << (ins_bias_g(0))<< std::endl;
+        paramsFile << std::fixed << std::setprecision(12) << "  y: " << (ins_bias_g(1))<< std::endl;
+        paramsFile << std::fixed << std::setprecision(12) << "  z: " << (ins_bias_g(2))<< std::endl;
         // paramsFile << std::fixed << std::setprecision(5) << "  yaw_offset: " << yaw_offset << std::endl;
         // paramsFile << "  zero_altitude: " << std::boolalpha << zero_altitude << std::endl;
         // paramsFile << "  broadcast_utm_transform: " << std::boolalpha << broadcast_utm_transform << std::endl;

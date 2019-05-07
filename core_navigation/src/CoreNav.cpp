@@ -59,7 +59,7 @@ bool CoreNav::Initialize(const ros::NodeHandle& n){
         }
 
         if(!Init(n)) {
-                ROS_ERROR("%s: Failed to initialize GTSAM.", name_.c_str());
+                ROS_ERROR("%s: Failed to initialize.", name_.c_str());
                 return false;
         }
 
@@ -180,6 +180,13 @@ bool CoreNav::LoadParameters(const ros::NodeHandle& n){
         if (!pu::Get("init/bias/gyro/y", init_bg_y)) return false;
         if (!pu::Get("init/bias/gyro/z", init_bg_z)) return false;
 
+        if (!pu::Get("bias_a/x", init_bias_a_x)) return false;
+        if (!pu::Get("bias_a/y", init_bias_a_y)) return false;
+        if (!pu::Get("bias_a/z", init_bias_a_z)) return false;
+        if (!pu::Get("bias_g/x", init_bias_g_x)) return false;
+        if (!pu::Get("bias_g/y", init_bias_g_y)) return false;
+        if (!pu::Get("bias_g/z", init_bias_g_z)) return false;
+
         if (!pu::Get("wheel/T_r_", T_r_)) return false;
         if (!pu::Get("wheel/s_or_", s_or_)) return false;
         if (!pu::Get("wheel/s_delta_or_", s_delta_or_)) return false;
@@ -222,8 +229,6 @@ void CoreNav::ImuCallback(const ImuData& imu_dataAdis_){
         if (first_imu_)
         {
                 imu_stamp_prev_ = (imu_dataAdis_.header.stamp).toSec();
-                // CoreNav::Vector6 imuNull((Vector(6) << 0,0,-9.81,0,0,0).finished());
-                // Propagate(imuNull,joint);
                 first_imu_ = false;
         }
         else{
@@ -243,6 +248,7 @@ bool CoreNav::RegisterCallbacks(const ros::NodeHandle& n){
         velocity_pub_ = nl.advertise<geometry_msgs::PointStamped>( "velocity", 10, false);
         attitude_pub_ = nl.advertise<geometry_msgs::PointStamped>( "attitude", 10, false);
         enu_pub_ = nl.advertise<geometry_msgs::PointStamped>( "enu", 10, false);
+        cn_pub_=nl.advertise<nav_msgs::Odometry>("cn_odom", 10, false);
 
         imu_sub_ = nl.subscribe(imu_topic_,  10, &CoreNav::ImuCallback, this);
         odo_sub_ = nl.subscribe(odo_topic_,  10, &CoreNav::OdoCallback, this);
@@ -257,8 +263,8 @@ void CoreNav::Propagate(const CoreNav::Vector6& imu, const CoreNav::Vector4& joi
         dt_imu_ = imu_stamp_curr_ - imu_stamp_prev_;
         count++;
 
-          omega_b_ib_ << imu[3] -bg_(0), imu[4]-bg_(1), imu[5]- bg_(2);
-          f_ib_b_ << imu[0] - (-0.269595299592400)-ba_(0), imu[1] -(-0.380047079599190)- ba_(1), imu[2] - ba_(2);
+        omega_b_ib_ << imu[3] -(init_bias_g_x)-bg_(0), imu[4] - (init_bias_g_y)- bg_(1), imu[5] -(init_bias_g_x) - bg_(2);
+        f_ib_b_ << imu[0] -(init_bias_a_x)-ba_(0), imu[1] - (init_bias_a_y)- ba_(1), imu[2] -(-9.81-init_bias_a_z) - ba_(2);
 //------------------------------------------------------------------------------
         //Attitude Update---------------------------------------------------------------
         // input =insAtt(:,i-1),omega_ie,insLLH(:,i-1),omega_b_ib,ecc,Ro,insVel(:,i-1),dtIMU
@@ -414,11 +420,12 @@ void CoreNav::Propagate(const CoreNav::Vector6& imu, const CoreNav::Vector4& joi
         Vector3 pos;
         pos = R_dist*posDiff;
         ins_enu_ << pos;
-
+        ins_cn_<<ins_att_,ins_vel_,ins_enu_;
         PublishStates(ins_att_, attitude_pub_);
         PublishStates(ins_vel_, velocity_pub_);
         PublishStates(ins_pos_, position_pub_);
         PublishStates(ins_enu_, enu_pub_);
+        PublishStatesCN(ins_cn_, cn_pub_);
         return;
 }
 
@@ -554,6 +561,40 @@ void CoreNav::PublishStates(const CoreNav::Vector3& states,
         msg.header.stamp = stamp_;
 
         pub.publish(msg);
+}
+
+void CoreNav::PublishStatesCN(const CoreNav::Vector9& cn_states,
+                              const ros::Publisher& cn_pub_){
+        // // Check for subscribers before doing any work.
+        if(cn_pub_.getNumSubscribers() == 0)
+                return;
+
+        nav_msgs::Odometry CNmsg;
+
+        // tf2::Quaternion Quat_msg;
+
+        // Quat_msg.setRPY(0,0,0);
+        // ROS_INFO_STREAM(Quat_msg);
+        Eigen::Quaternionf Quat_msg;
+        Quat_msg=Eigen::AngleAxisf(cn_states(0), Eigen::Vector3f::UnitX())* Eigen::AngleAxisf(cn_states(1), Eigen::Vector3f::UnitY())* Eigen::AngleAxisf(cn_states(2), Eigen::Vector3f::UnitZ());
+        // std::cout << "Quaternion" << '\n';
+        // CoreNav::Vector4 quat1((Quat_msg.coeffs()).transpose());
+        auto quat1=(Quat_msg.coeffs());
+        // std::cout << quat1 << '\n';
+        CNmsg.pose.pose.position.x=cn_states(6);
+        CNmsg.pose.pose.position.y=cn_states(7);
+        CNmsg.pose.pose.position.z=cn_states(8);
+        CNmsg.pose.pose.orientation.w=quat1(0);
+        CNmsg.pose.pose.orientation.x=quat1(1);
+        CNmsg.pose.pose.orientation.y=quat1(2);
+        CNmsg.pose.pose.orientation.z=quat1(3);
+        CNmsg.twist.twist.linear.x=cn_states(3);
+        CNmsg.twist.twist.linear.y=cn_states(4);
+        CNmsg.twist.twist.linear.z=cn_states(5);
+        CNmsg.header.frame_id = frame_id_imu_;
+        CNmsg.header.stamp = stamp_;
+
+        cn_pub_.publish(CNmsg);
 }
 
 CoreNav::Vector3 CoreNav::calc_gravity(const double latitude, const double height)

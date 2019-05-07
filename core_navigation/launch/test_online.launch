@@ -22,7 +22,7 @@
 
       <!-- Rates -->
       <rosparam file="$(find core_nav)/config/parameters.yaml"/>
-
+      <rosparam file="$(find core_nav)/config/init_params.yaml"/>
     </node>
   </group>
 </launch>

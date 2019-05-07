@@ -47,7 +47,7 @@
 #include <message_filters/time_synchronizer.h>
 #include <core_navigation/InsConst.h>
 #include <core_navigation/InsUtils.h>
-
+#include <tf2/LinearMath/Quaternion.h>
 class CoreNav {
 public:
 
@@ -62,6 +62,7 @@ public:
         typedef Eigen::Matrix<double, 3, 1> Vector3;
         typedef Eigen::Matrix<double, 4, 1> Vector4;
         typedef Eigen::Matrix<double, 6, 1> Vector6;
+        typedef Eigen::Matrix<double, 9, 1> Vector9;
         typedef Eigen::Matrix<double, 13, 1> Vector13;
         typedef Eigen::Matrix<double, 15, 1> Vector15;
 
@@ -73,6 +74,7 @@ public:
         CoreNav::Vector13 odo;
         CoreNav::Vector6 imu;
         CoreNav::Vector4 joint;
+
 
         CoreNav();
         ~CoreNav();
@@ -88,7 +90,7 @@ private:
 
 // Publish estimated  states.
         void PublishStates(const CoreNav::Vector3& states, const ros::Publisher& pub);
-
+        void PublishStatesCN(const CoreNav::Vector9& cn_states, const ros::Publisher& cn_pub_);
         void ImuCallback(const ImuData& imu_data_);
         void OdoCallback(const OdoData& odo_data_);
         void JointCallBack(const JointData& joint_data_);
@@ -122,7 +124,7 @@ private:
         ros::Subscriber joint_sub_;
 
 // Publisher.
-        ros::Publisher position_pub_, velocity_pub_, attitude_pub_, enu_pub_;
+        ros::Publisher position_pub_, velocity_pub_, attitude_pub_, enu_pub_,cn_pub_;
         tf::TransformBroadcaster transformed_states_tf_broad;
 
         OdoData odo_data_;
@@ -165,6 +167,7 @@ private:
         CoreNav::Vector3 bg_;
         CoreNav::Vector3 ins_att_, ins_vel_, ins_pos_, ins_enu_;
         CoreNav::Vector4 Z_;
+        CoreNav::Vector9 ins_cn_;
         CoreNav::Matrix P_, Q_, STM_;
         Eigen::Matrix<double, 4, 4> R_;
         Eigen::Matrix<double, 3, 3> R_zupt;
@@ -200,6 +203,7 @@ private:
         double init_cov_roll, init_cov_pitch, init_cov_yaw;
         double init_ecef_x,init_ecef_y,init_ecef_z;
         double init_ba_x, init_ba_y, init_ba_z, init_bg_x, init_bg_y, init_bg_z;
+        double init_bias_a_x, init_bias_a_y, init_bias_a_z, init_bias_g_x, init_bias_g_y, init_bias_g_z;
         double sigma_z, sigma_vx, sigma_vy, prev_stamp_, up_time_;
         double sigma_vz, sigma_roll, sigma_pitch, sigma_yaw;
         double imu_stamp_curr_, imu_stamp_prev_, odo_stamp_curr_, odo_stamp_prev_;
