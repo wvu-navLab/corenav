@@ -2,13 +2,13 @@
   <!-- True for simulation, false for real-time and bagfiles -->
   <param name="/use_sim_time" value="false"/>
 
+      <!-- <node pkg="tf" type="static_transform_publisher" name="imu_to_odom"
+                args="0 0 0 0 0 0 /odom2 /imu_link 100" /> -->
   <group ns="core_nav">
-    <!-- SLAM -->
     <node pkg="core_nav"
           name="core_nav"
           type="core_nav_node"
           output="screen">
-
 
       <!-- Initial pose -->
       <rosparam param="init">

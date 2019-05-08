@@ -575,25 +575,45 @@ void CoreNav::PublishStatesCN(const CoreNav::Vector9& cn_states,
 
         // Quat_msg.setRPY(0,0,0);
         // ROS_INFO_STREAM(Quat_msg);
-        Eigen::Quaternionf Quat_msg;
-        Quat_msg=Eigen::AngleAxisf(cn_states(0), Eigen::Vector3f::UnitX())* Eigen::AngleAxisf(cn_states(1), Eigen::Vector3f::UnitY())* Eigen::AngleAxisf(cn_states(2), Eigen::Vector3f::UnitZ());
-        // std::cout << "Quaternion" << '\n';
-        // CoreNav::Vector4 quat1((Quat_msg.coeffs()).transpose());
-        auto quat1=(Quat_msg.coeffs());
-        // std::cout << quat1 << '\n';
+        // Eigen::Quaternionf Quat_msg;
+        // Quat_msg=Eigen::AngleAxisf(cn_states(0), Eigen::Vector3f::UnitX())* Eigen::AngleAxisf(cn_states(1), Eigen::Vector3f::UnitY())* Eigen::AngleAxisf(cn_states(2), Eigen::Vector3f::UnitZ());
+        // auto quat1=(Quat_msg.coeffs());
+
+        tf::Matrix3x3 obs_mat;
+        obs_mat.setEulerYPR(cn_states(2),cn_states(1),cn_states(0));
+
+        tf::Quaternion q_tf;
+        obs_mat.getRotation(q_tf);
+
         CNmsg.pose.pose.position.x=cn_states(6);
         CNmsg.pose.pose.position.y=cn_states(7);
         CNmsg.pose.pose.position.z=cn_states(8);
-        CNmsg.pose.pose.orientation.w=quat1(0);
-        CNmsg.pose.pose.orientation.x=quat1(1);
-        CNmsg.pose.pose.orientation.y=quat1(2);
-        CNmsg.pose.pose.orientation.z=quat1(3);
+        CNmsg.pose.pose.orientation.w=q_tf.getW();
+        CNmsg.pose.pose.orientation.x=q_tf.getX();
+        CNmsg.pose.pose.orientation.y=q_tf.getY();
+        CNmsg.pose.pose.orientation.z=q_tf.getZ();
         CNmsg.twist.twist.linear.x=cn_states(3);
         CNmsg.twist.twist.linear.y=cn_states(4);
         CNmsg.twist.twist.linear.z=cn_states(5);
-        CNmsg.header.frame_id = frame_id_imu_;
+
+        CNmsg.header.frame_id = frame_id_fixed_;
+        CNmsg.child_frame_id = frame_id_imu_;
         CNmsg.header.stamp = stamp_;
 
+        // tf::Pose pose;
+        // tf::poseMsgToTF(CNmsg.pose.pose, pose);
+        // double yaw_angle = tf::getYaw(pose.getRotation());
+        // CNmsg.twist.twist.angular.x=yaw_angle;
+
+        // tf::Quaternion q(
+        //     q_tf.getX(),
+        //     q_tf.getY(),
+        //     q_tf.getZ(),
+        //     q_tf.getW());
+        // tf::Matrix3x3 m(q);
+        // double roll, pitch, yaw;
+        // m.getRPY(roll, pitch, yaw);
+        // CNmsg.twist.twist.angular.x=yaw;
         cn_pub_.publish(CNmsg);
 }
 
