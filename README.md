@@ -15,7 +15,16 @@ Maintainer: Cagri Kilic, cakilic@mix.wvu.edu**
 
 If you use this work in an academic context, please cite the following publication:
 
-* Cagri Kilic, Jason N. Gross, Nicholas Ohi, Ryan Watson, Jared Strader, Thomas Swiger, Scott Harper, and Yu Gu: **Improved Planetary Rover Inertial Navigation and Wheel Odometry Performance through Periodic Use of Zero-Type Constraints**.
+* Cagri Kilic, Jason N. Gross, Nicholas Ohi, Ryan Watson, Jared Strader, Thomas Swiger, Scott Harper, and Yu Gu: **Improved Planetary Rover Inertial Navigation and Wheel Odometry Performance through Periodic Use of Zero-Type Constraints**. IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), 2019. ([PDF](https://arxiv.org/pdf/1906.08849.pdf))
+
+        @inproceedings{Kilic2019,
+            author = {Kilic, Cagri and Gross,Jason N. and Ohi,Nicholas and Watson, Ryan and Strader, Jared and Swiger, Thomas and Harper, Scott and Gu, Yu},
+            booktitle = {IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
+            title = {{Improved Planetary Rover Inertial Navigation and Wheel Odometry Performance through Periodic Use of Zero-Type Constraints}},
+            publisher = {IEEE},
+            year = {2019}
+        }
+
 
 ## IROS Review
 
