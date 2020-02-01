@@ -19,13 +19,17 @@ If you use this work in an academic context, please cite the following publicati
 
         @inproceedings{Kilic2019,
             author = {Kilic, Cagri and Gross,Jason N. and Ohi,Nicholas and Watson, Ryan and Strader, Jared and Swiger, Thomas and Harper, Scott and Gu, Yu},
-            booktitle = {IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
+            booktitle = {2019 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
             title = {{Improved Planetary Rover Inertial Navigation and Wheel Odometry Performance through Periodic Use of Zero-Type Constraints}},
+            year = {2019},
+            pages={552-559},
+            doi={10.1109/IROS40897.2019.8967634},
+            ISSN={2153-0858}, 
             publisher = {IEEE},
-            year = {2019}
+            
         }
 
 
-## IROS Review
+## IROS Figures
 
 To generate the same figures in the paper, use [v.1.0](https://github.com/wvu-navLab/CLN/tree/v1.0) and simply run MainRun.m
