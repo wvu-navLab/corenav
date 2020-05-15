@@ -97,7 +97,7 @@ void JointCallBack(const JointData& joint_data_);
 void Update(const CoreNav::Vector13& odo);
 void Propagate(const CoreNav::Vector6& imu, const CoreNav::Vector4& joint);
 
-void NonHolonomic(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 errorStates, Eigen::MatrixXd P, CoreNav::Vector3 omega_b_ib));
+void NonHolonomic(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 errorStates, Eigen::MatrixXd P, CoreNav::Vector3 omega_b_ib);
 
 //Zero vel update
 void zupt(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 errorStates, Eigen::MatrixXd P);
@@ -108,6 +108,7 @@ CoreNav::Vector3 calc_gravity(const double latitude, const double height);
 CoreNav::Matrix3 skew_symm(const CoreNav::Vector3 vec);
 CoreNav::Matrix3 eul_to_dcm(double phi, double theta, double psi);
 CoreNav::Vector3 dcm_to_eul(CoreNav::Matrix3 dcm);
+CoreNav::Vector3 llh_to_enu(const double latitude, const double longitude, const double height);
 CoreNav::Matrix insErrorStateModel_LNF(double R_EPlus, double R_N, CoreNav::Vector3 insLLHPlus, CoreNav::Vector3 insVelPlus, double dt,CoreNav::Matrix3 CbnPlus, double omega_ie, CoreNav::Vector3 omega_n_in,Vector3 f_ib_b,double gravity);
 CoreNav::Matrix calc_Q(double R_N, double R_E, CoreNav::Vector3 insLLHPlus, double dt, CoreNav::Matrix3 CbnPlus, CoreNav::Vector3 f_ib_b);
 
@@ -171,12 +172,16 @@ CoreNav::Matrix P_, Q_, STM_;
 Eigen::Matrix<double, 4, 4> R_;
 Eigen::Matrix<double, 3, 3> R_zupt;
 Eigen::Matrix<double, 3, 3> R_zaru;
+Eigen::Matrix<double, 2, 2> R_holo;
 Eigen::Matrix<double, 15, 4> K_;
 Eigen::Matrix<double, 15, 3> K_zupt;
 Eigen::Matrix<double, 15, 3> K_zaru;
+Eigen::Matrix<double, 15, 2> K_holo;
 Eigen::Matrix<double, 4, 15> H_;
 Eigen::Matrix<double, 3, 15> H_zupt;
 Eigen::Matrix<double, 3, 15> H_zaru;
+Eigen::Matrix<double, 2, 15> H_holo;
+Eigen::Matrix<double, 2, 1> z_holo;
 
 CoreNav::Vector3 H11_, H12_, H21_, H31_, H32_, H24_, H41_, H42_;
 double z11_, z21_, z31_, z41_;
@@ -187,16 +192,18 @@ CoreNav::Vector3 f_ib_b_, f_ib_b_prev_, omega_n_en_, omega_n_in_, grav_;
 CoreNav::Matrix3 Omega_b_ib_, Omega_n_ie_, Omega_n_en_;
 
 // imu noise params
-double accel_sigma_, accel_rw_, gyro_sigma_, gyro_rw_;
-
+        double sig_gyro_inRun_, sig_ARW_,  sig_accel_inRun_, sig_VRW_;
 // filter noise params
-double position_noise_, attitude_noise_, velocity_noise_, bias_noise_;
+        double position_noise_, attitude_noise_, velocity_noise_, bias_noise_;
 
 // initial pose
 double init_x, init_y, init_z, init_vx, init_vy, init_vz, psiEst;
 double init_roll, init_pitch, init_yaw, sigma_x, sigma_y;
 double sigma_z, sigma_vx, sigma_vy, prev_stamp_, up_time_;
 double sigma_vz, sigma_roll, sigma_pitch, sigma_yaw;
+double init_ba_x, init_ba_y, init_ba_z, init_bg_x, init_bg_y, init_bg_z;
+double init_bias_a_x, init_bias_a_y, init_bias_a_z, init_bias_g_x, init_bias_g_y, init_bias_g_z;
+double init_ecef_x,init_ecef_y,init_ecef_z;
 double imu_stamp_curr_, imu_stamp_prev_, odo_stamp_curr_, odo_stamp_prev_;
 double joint_stamp_curr_, joint_stamp_prev_;
 double dt_odo_, dt_imu_;

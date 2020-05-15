@@ -59,7 +59,7 @@ bool CoreNav::Initialize(const ros::NodeHandle& n){
         }
 
         if(!Init(n)) {
-                ROS_ERROR("%s: Failed to initialize GTSAM.", name_.c_str());
+                ROS_ERROR("%s: Failed to initialize the nodehandle", name_.c_str());
                 return false;
         }
 
@@ -78,33 +78,31 @@ bool CoreNav::Init(const ros::NodeHandle& n){
         // // Construct initial P matrix, Diagonal P
         P_= Eigen::MatrixXd::Zero(num_states_,num_states_);
 
-        // TODO:: Don't hardcode these params! Changes for every test
+        // NOTE: These parameters changes for every test and robots. Tuning might be needed.
         Eigen::MatrixXd P= Eigen::MatrixXd::Zero(15,15);
         P(0,0)=1.218469679146834e-06; P(1,1)=1.218469679146834e-06; P(2,2)=4.873878716587337e-06;
-        P(3,3)=4.000000000000001e-07; P(4,4)=4.000000000000001e-07; P(5,5)=4.000000000000001e-07;
-        P(6,6)=1.21846967914683e-14; P(7,7)=1.21846967914683e-14; P(8,8)=100.0;
-        P(9,9)=-0.011428207234497;   P(10,10)=0.008740805264598; P(11,11)=0.013108032973440;
-        P(12,12)=-8.805993629556402e-04; P(13,13)=9.874592038800420e-04;  P(14,14)=8.985670378275259e-04;
+        P(3,3)=4.000000000000001e-07;   P(4,4)=4.000000000000001e-07;    P(5,5)=4.000000000000001e-07;
+        P(6,6)=1.218469679146834e-14;    P(7,7)=1.218469679146834e-14;     P(8,8)=0.01;
+        P(9,9)=init_ba_x;     P(10,10)=init_ba_y;    P(11,11)=init_ba_z;
+        P(12,12)=init_bg_x;   P(13,13)=init_bg_y;    P(14,14)=init_bg_z;
 
-        ba_(0) = P(9,9);
-        ba_(1) = P(10,10);
-        ba_(2) = P(11,11);
-        bg_(0) = P(12,12);
-        bg_(1) = P(13,13);
-        bg_(2) = P(14,14);
+        ba_(0) = P(9,9);   ba_(1) = P(10,10); ba_(2) = P(11,11);
+        bg_(0) = P(12,12); bg_(1) = P(13,13); bg_(2) = P(14,14);
 
         R_ << 0.0004,0,0,0,
                 0,0.1152,0,0,
                 0,0,0.0025,0,
                 0,0,0,0.0025;
 
-        R_zupt << std::pow(0.012,2),0,0, // TODO: Revisit here
+        R_zupt << std::pow(0.012,2),0,0,
                 0,std::pow(0.012,2),0,
                 0,0,std::pow(0.012,2);
 
-        R_zaru << std::pow(0.01,2),0,0, // TODO: Revisit here
+        R_zaru << std::pow(0.01,2),0,0,
                 0,std::pow(0.01,2),0,
                 0,0,std::pow(0.0025,2);
+
+        R_holo << 0.05,0,0,0.05;
 
         H11_<< 0.0,0.0,0.0;
         H12_ << 0.0,0.0,0.0;
@@ -126,7 +124,7 @@ bool CoreNav::Init(const ros::NodeHandle& n){
         ins_att_ << init_roll, init_pitch, init_yaw;
         ins_vel_ << init_vx, init_vy, init_vz;
         ins_pos_ << init_x, init_y, init_z;
-        //ins_enu_ <<0.0,0.0,0.0;
+
         return true;
 }
 
@@ -147,10 +145,10 @@ bool CoreNav::LoadParameters(const ros::NodeHandle& n){
         if(!pu::Get("imu/sensor_pub_rate", sensor_pub_rate_)) return false;
 
         // Load imu noise specs
-        if(!pu::Get("imu/noise/accel_noise_sigma", accel_sigma_)) return false;
-        if(!pu::Get("imu/noise/gyro_noise_sigma", gyro_sigma_)) return false;
-        if(!pu::Get("imu/noise/accel_bias_rw_sigma", accel_rw_)) return false;
-        if(!pu::Get("imu/noise/gyro_bias_rw_sigma", gyro_rw_)) return false;
+        if(!pu::Get("imu/noise/sig_gyro_inRun", sig_gyro_inRun_)) return false;
+        if(!pu::Get("imu/noise/sig_ARW", sig_ARW_)) return false;
+        if(!pu::Get("imu/noise/sig_accel_inRun", sig_accel_inRun_)) return false;
+        if(!pu::Get("imu/noise/sig_VRW", sig_VRW_)) return false;
 
         // Load initial position and orientation.
         if (!pu::Get("init/position/x", init_x)) return false;
@@ -162,6 +160,17 @@ bool CoreNav::LoadParameters(const ros::NodeHandle& n){
         if (!pu::Get("init/orientation/x", init_roll)) return false;
         if (!pu::Get("init/orientation/y", init_pitch)) return false;
         if (!pu::Get("init/orientation/z", init_yaw)) return false;
+
+        if (!pu::Get("init/ecef/x", init_ecef_x)) return false;
+        if (!pu::Get("init/ecef/y", init_ecef_y)) return false;
+        if (!pu::Get("init/ecef/z", init_ecef_z)) return false;
+
+        if (!pu::Get("bias_a/x", init_bias_a_x)) return false;
+        if (!pu::Get("bias_a/y", init_bias_a_y)) return false;
+        if (!pu::Get("bias_a/z", init_bias_a_z)) return false;
+        if (!pu::Get("bias_g/x", init_bias_g_x)) return false;
+        if (!pu::Get("bias_g/y", init_bias_g_y)) return false;
+        if (!pu::Get("bias_g/z", init_bias_g_z)) return false;
 
         if (!pu::Get("wheel/T_r_", T_r_)) return false;
         if (!pu::Get("wheel/s_or_", s_or_)) return false;
@@ -180,8 +189,6 @@ void CoreNav::OdoCallback(const OdoData& odo_data_){
         }
         else{
                 odo_stamp_curr_ = (odo_data_.header.stamp).toSec();
-
-                // Update(odo);
                 odo_stamp_prev_ = odo_stamp_curr_;
         }
         return;
@@ -336,20 +343,21 @@ void CoreNav::Propagate(const CoreNav::Vector6& imu, const CoreNav::Vector4& joi
                 -1.0*omega_b_eb(1), omega_b_eb(0), 0.0;
 
         // Measurement Innovation -- integration part for INS -- eq 16.42
-        Vector3 tmp = Cn2bPlus*ins_vel_ + Omega_b_eb*(-0.272*(eye3.col(0)));
+        double tmp1 = eye3.row(0)*(Cn2bPlus*ins_vel_ + (CoreNav::skew_symm(omega_b_eb)*(-0.272*(eye3.col(0)))));
+        double tmp2 = eye3.row(1)*(Cn2bPlus*ins_vel_ + (CoreNav::skew_symm(omega_b_eb)*(-0.272*(eye3.col(0)))));
+        double tmp3 = eye3.row(2)*(Cn2bPlus*ins_vel_ + (CoreNav::skew_symm(omega_b_eb)*(-0.272*(eye3.col(0)))));
 
-        z11_ += tmp[0]*dt_imu_;
+
+        z11_ += tmp1*dt_imu_;
         z21_ += cos(ins_att_(1))*dt_imu_;
-        z31_ += tmp[1] * dt_imu_;
-        z41_ += tmp[2] * dt_imu_;
-        CoreNav::NonHolonomic(ins_vel_, ins_att_, ins_pos_, error_states_, P-, omega_b_ib_))
+        z31_ += tmp2 * dt_imu_;
+        z41_ += tmp3 * dt_imu_;
 
-        if ( std::abs(odo[7]) <0.004) { // TODO: Revisit here
-
+        CoreNav::NonHolonomic(ins_vel_, ins_att_, ins_pos_, error_states_, P_, omega_b_ib_);
+ //std::cout << "rearVel_" << '\n'<< rearVel_ << '\n';
+        if ( std::abs(odo[7]) < 0.004) // TODO: Revisit here
+        {
                 CoreNav::zupt(ins_vel_, ins_att_, ins_pos_, error_states_, P_);
-                CoreNav::zaru(ins_vel_, ins_att_, ins_pos_, error_states_, P_, omega_b_ib_);
-        }
-        if ( headRate_ == 0 ) {
                 CoreNav::zaru(ins_vel_, ins_att_, ins_pos_, error_states_, P_, omega_b_ib_);
         }
         ba_(0)=error_states_(9);
@@ -359,44 +367,15 @@ void CoreNav::Propagate(const CoreNav::Vector6& imu, const CoreNav::Vector4& joi
         bg_(1)=error_states_(13);
         bg_(2)=error_states_(14);
 
-
-        double phi = ins_pos_(0);
-        double lambda = ins_pos_(1);
-        double h = ins_pos_(2);
-
-        double a = 6378137.0000;  //% earth semimajor axis in meters
-        double b = 6356752.3142;  //% earth semiminor axis in meters
-        double e = sqrt(1-pow((b/a),2));
-
-        double sinphi = sin(phi);
-        double cosphi = cos(phi);
-        double coslam = cos(lambda);
-        double sinlam = sin(lambda);
-        double tan2phi = pow((tan(phi)),2);
-        double tmp2 = 1 - e*e;
-        double tmpden = sqrt( 1 + tmp2*tan2phi );
-        double x1 = (a*coslam)/tmpden + h*coslam*cosphi;
-        double y1 = (a*sinlam)/tmpden + h*sinlam*cosphi;
-        double tmp3 = sqrt(1 - e*e*sinphi*sinphi);
-        double z1 = (a*tmp2*sinphi)/tmp3 + h*sinphi;
-        Vector3 p1(x1,y1,z1);
-        // TODO:: Don't hardcode these params! Changes for every test
-        Vector3 p2(856503.7292,-4842984.4396,4047974.3219); // TODO: Revisit here
-        Vector3 posDiff = p1 - p2;
-        Vector3 orgLLH(init_x, init_y, init_z);
-        double sinPhi = sin(orgLLH(0));
-        double cosPhi = cos(orgLLH(0));
-        double sinLam = sin(orgLLH(1));
-        double cosLam = cos(orgLLH(1));
-        Matrix R = ( Matrix(3,3) << (-1*sinLam), cosLam, 0, ((-1*sinPhi)*cosLam), ((-1*sinPhi)*sinLam), cosPhi, (cosPhi*cosLam), (cosPhi*sinLam), sinPhi ).finished();
-        Vector3 pos;
-        pos = R*posDiff;
-        ins_enu_ << pos;
+        ins_enu_ << CoreNav::llh_to_enu(ins_pos_[0],ins_pos_[1],ins_pos_[2]);
+        // ins_cn_<<ins_att_,ins_vel_,ins_enu_;
 
         PublishStates(ins_att_, attitude_pub_);
         PublishStates(ins_vel_, velocity_pub_);
         PublishStates(ins_pos_, position_pub_);
         PublishStates(ins_enu_, enu_pub_);
+        // PublishStatesCN(ins_cn_, cn_pub_);
+
         return;
 }
 
@@ -419,7 +398,7 @@ void CoreNav::Update(const CoreNav::Vector13& odo)
         double z1_odom=rearVel_*(1-s_or_);
         double z2_odom=headRate_*(1-s_or_)-((z11_/dt_odo_)/T_r_)*s_delta_or_;
         double z1_ins=z11_;
-        double z2_ins=((ins_att_(2)-psiEst))*z21_; //NOTE psiEst is estimated psi from the odometry update below
+        double z2_ins=((ins_att_(2)-psiOld))*z21_;
         if (abs(z2_ins) > 0.5) {
                 z2_ins=0.0;
         }
@@ -451,22 +430,11 @@ void CoreNav::Update(const CoreNav::Vector13& odo)
         double psiEst = atan2(insAttEst(1,0),insAttEst(0,0));
 
         ins_att_ << phiEst, thetaEst, psiEst;
-
         ins_vel_ << ins_vel_(0)-error_states_(3), ins_vel_(1)-error_states_(4), ins_vel_(2)-error_states_(5);
-
         ins_pos_ << ins_pos_(0)-error_states_(6), ins_pos_(1)-error_states_(7), ins_pos_(2)-error_states_(8);
 
-        error_states_(0)=0.0;
-        error_states_(1)=0.0;
-        error_states_(2)=0.0;
+        error_states_.segment(0,9)<<Eigen::VectorXd::Zero(9);
 
-        error_states_(3)=0.0;
-        error_states_(4)=0.0;
-        error_states_(5)=0.0;
-
-        error_states_(6)=0.0;
-        error_states_(7)=0.0;
-        error_states_(8)=0.0;
         ba_(0)=error_states_(9);
         ba_(1)=error_states_(10);
         ba_(2)=error_states_(11);
@@ -493,7 +461,7 @@ void CoreNav::Update(const CoreNav::Vector13& odo)
 
         return;
 }
-
+// Be careful with the IMU placement. We hardcoded the orientation of the IMU output here. Instead a static tf can be better.
 CoreNav::Vector6 CoreNav::getImuData(const ImuData& imu_dataAdis_)
 {
         CoreNav::Vector6 imuVec((Vector(6) << imu_dataAdis_.linear_acceleration.y*(-1.0),
@@ -617,49 +585,71 @@ CoreNav::Vector3 CoreNav::dcm_to_eul(CoreNav::Matrix3 dcm)
         eul << std::atan2(dcm(2,1), dcm(2,2)), std::asin(-1*dcm(2,0)), std::atan2(dcm(1,0), dcm(0,0));
         return eul;
 }
-// NonHolonomic Update
-void CoreNav::NonHolonomic(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 errorStates, Eigen::MatrixXd P, CoreNav::Vector3 omega_b_ib))
+
+CoreNav::Vector3 CoreNav::llh_to_enu(double lat, double lon, double height)
 {
+
+
+        double phi = lat;
+        double lambda = lon;
+        double h = height;
+
+        double a = 6378137.0000;  //% earth semimajor axis in meters
+        double b = 6356752.3142;  //% earth semiminor axis in meters
+        double e = sqrt(1-pow((b/a),2));
+
+        double sinphi = sin(phi);
+        double cosphi = cos(phi);
+        double coslam = cos(lambda);
+        double sinlam = sin(lambda);
+        double tan2phi = pow((tan(phi)),2);
+        double tmp2 = 1 - e*e;
+        double tmpden = sqrt( 1 + tmp2*tan2phi );
+        double x1 = (a*coslam)/tmpden + h*coslam*cosphi;
+        double y1 = (a*sinlam)/tmpden + h*sinlam*cosphi;
+        double tmp3 = sqrt(1 - e*e*sinphi*sinphi);
+        double z1 = (a*tmp2*sinphi)/tmp3 + h*sinphi;
+        Vector3 p1(x1,y1,z1);
+        Vector3 p2(init_ecef_x, init_ecef_y, init_ecef_z); //
+        Vector3 posDiff = p1 - p2;
+        Vector3 orgLLH(init_x, init_y, init_z);
+        double sinPhi = sin(orgLLH(0));
+        double cosPhi = cos(orgLLH(0));
+        double sinLam = sin(orgLLH(1));
+        double cosLam = cos(orgLLH(1));
+        Matrix R_dist = ( Matrix(3,3) << (-1*sinLam), cosLam, 0, ((-1*sinPhi)*cosLam), ((-1*sinPhi)*sinLam), cosPhi, (cosPhi*cosLam), (cosPhi*sinLam), sinPhi ).finished();
+        Vector3 pos;
+        pos = R_dist*posDiff;
+        return pos;
+
+}
+
+// NonHolonomic Update
+void CoreNav::NonHolonomic(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 error_states, Eigen::MatrixXd P, CoreNav::Vector3 omega_b_ib)
+{
+
         CoreNav::Matrix3 Cnb = CoreNav::eul_to_dcm(att[0],att[1],att[2]);
-        CoreNav::Matrix3 ins_vel_ss;         //ins_vel_ skew symmetric
-        // ins_vel_ss = CoreNav::skew_symm(omega_b_ib);
-        // CoreNav::Vector3 Val_H21(0,cos(ins_att_(0)),sin(ins_att_(0)));
-        CoreNav::Vector3 z_holo1;
-        CoreNav::Vector3 z_holo2;
-        z_holo1 = -eye3.row(1)*(Cnb*vel-CoreNav::skew_symm(omega_b_ib)*(-0.272*(eye3.col(0))));
-        z_holo2 = -eye3.row(2)*(Cnb*vel-CoreNav::skew_symm(omega_b_ib)*(-0.272*(eye3.col(0))));
 
-        H_holo.row(0)<<zeros3.row(0), -eye3.row(1)*Cnb, zeros3.row(0), zeros3.row(0),zeros3.row(0);
-        H_holo.row(1)<<zeros3.row(0), -eye3.row(2)*Cnb,  zeros3.row(0), H24_.transpose(), zeros3.row(0);
+        z_holo.row(0) = -eye3.row(1)*(Cnb*vel-CoreNav::skew_symm(omega_b_ib)*(-0.272*(eye3.col(0))));
+        z_holo.row(1) = -eye3.row(2)*(Cnb*vel-CoreNav::skew_symm(omega_b_ib)*(-0.272*(eye3.col(0))));
 
-        Matrix R_holo= ( Matrix(2,2) << (0.05,0,0,0.05).finished();
+        H_holo.row(0)<<zeros3.row(0), -eye3.row(1)*Cnb, zeros3.row(0), zeros3.row(0), zeros3.row(0);
+        H_holo.row(1)<<zeros3.row(0), -eye3.row(2)*Cnb, zeros3.row(0), zeros3.row(0), zeros3.row(0);
 
+        K_holo = P * H_holo.transpose() * (H_holo * P * H_holo.transpose() + R_holo).inverse();
 
-        K_holo = P_ * H_holo.transpose() * (H_holo * P_ * H_holo.transpose() + R_zupt).inverse();
-
-        error_states_ = error_states_ + K_holo* (z_holo  - H_holo * error_states_);
+        error_states_ = error_states + K_holo* (z_holo  - H_holo * error_states);
 
         ins_att_ = CoreNav::dcm_to_eul((Eigen::MatrixXd::Identity(3,3)- CoreNav::skew_symm(error_states_.segment(0,3)))*Cnb.transpose());
-        ins_vel_ = ins_vel_ - error_states_.segment(3,3);
-        ins_pos_ = ins_pos_ - error_states_.segment(6,3);
+        ins_vel_ = vel - error_states_.segment(3,3);
+        ins_pos_ = llh - error_states_.segment(6,3);
 
-        error_states_(0)=0.0;
-        error_states_(1)=0.0;
-        error_states_(2)=0.0;
+        error_states_.segment(0,9)<<Eigen::VectorXd::Zero(9);
 
-        error_states_(3)=0.0;
-        error_states_(4)=0.0;
-        error_states_(5)=0.0;
-
-        error_states_(6)=0.0;
-        error_states_(7)=0.0;
-        error_states_(8)=0.0;
-
-        P_=(Eigen::MatrixXd::Identity(15,15) - K_holo * H_holo) * P_ * ( Eigen::MatrixXd::Identity(15,15) - K_holo * H_holo ).transpose() + K_holo * R_holo * K_holo.transpose();
+        P_=(Eigen::MatrixXd::Identity(15,15) - K_holo * H_holo) * P * ( Eigen::MatrixXd::Identity(15,15) - K_holo * H_holo ).transpose() + K_holo * R_holo * K_holo.transpose();
 
         return;
 }
-
 
 // Zero vel. update
 void CoreNav::zupt(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 errorStates, Eigen::MatrixXd P)
@@ -677,17 +667,7 @@ void CoreNav::zupt(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const
         ins_vel_ = ins_vel_ - error_states_.segment(3,3);
         ins_pos_ = ins_pos_ - error_states_.segment(6,3);
 
-        error_states_(0)=0.0;
-        error_states_(1)=0.0;
-        error_states_(2)=0.0;
-
-        error_states_(3)=0.0;
-        error_states_(4)=0.0;
-        error_states_(5)=0.0;
-
-        error_states_(6)=0.0;
-        error_states_(7)=0.0;
-        error_states_(8)=0.0;
+        error_states_.segment(0,9)<<Eigen::VectorXd::Zero(9);
 
         P_=(Eigen::MatrixXd::Identity(15,15) - K_zupt * H_zupt) * P_ * ( Eigen::MatrixXd::Identity(15,15) - K_zupt * H_zupt ).transpose() + K_zupt * R_zupt * K_zupt.transpose();
 
@@ -711,17 +691,7 @@ void CoreNav::zaru(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const
         ins_vel_ = ins_vel_ - error_states_.segment(3,3);
         ins_pos_ = ins_pos_ - error_states_.segment(6,3);
 
-        error_states_(0)=0.0;
-        error_states_(1)=0.0;
-        error_states_(2)=0.0;
-
-        error_states_(3)=0.0;
-        error_states_(4)=0.0;
-        error_states_(5)=0.0;
-
-        error_states_(6)=0.0;
-        error_states_(7)=0.0;
-        error_states_(8)=0.0;
+        error_states_.segment(0,9)<<Eigen::VectorXd::Zero(9);
 
         P_=(Eigen::MatrixXd::Identity(15,15) - K_zaru * H_zaru) * P_ * ( Eigen::MatrixXd::Identity(15,15) - K_zaru * H_zaru ).transpose() + K_zaru * R_zaru * K_zaru.transpose();
         return;
@@ -802,14 +772,13 @@ CoreNav::Matrix CoreNav::calc_Q(double R_N, double R_E, CoreNav::Vector3 insLLH,
         T_rn_p.row(2)<<0.0,0.0,-1.0;
         double gg=9.80665;
 
-// TODO: Revisit here!! it should be for adis 16488, these are for 95
+// IMU specific noise values from its datasheet. This is for adis 16495-2bmlz
         double sig_gyro_inRun = 1.6*INS::PI/180/3600; //rad/s
         double sig_ARW = .1*(INS::PI/180)*sqrt(3600)/3600;; //rad
 
         double sig_accel_inRun = (3.2e-6)*gg; // m/s
         double sig_VRW = 0.008*sqrt(3600)/3600; //m/s
 
-//following 14.2.6 of Groves pp 592
         double Srg= pow(sig_ARW,2)*dt;
         double Sra= pow(sig_VRW,2)*dt;
 

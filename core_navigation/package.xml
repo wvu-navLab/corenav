@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>core_navigation</name>
+  <name>core_nav</name>
   <version>0.1.0</version>
   <description>Core Navigation</description>
 
@@ -19,7 +19,8 @@
   <build_depend>nav_msgs</build_depend>
   <build_depend>tf2_ros</build_depend>
   <build_depend>tf</build_depend>
-
+  <build_depend>std_msgs</build_depend>
+  <build_depend>message_generation</build_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>geometry_utils</run_depend>
   <run_depend>parameter_utils</run_depend>
@@ -28,4 +29,6 @@
   <build_depend>nav_msgs</build_depend>
   <run_depend>tf2_ros</run_depend>
   <run_depend>tf</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>message_runtime</run_depend>
 </package>
