@@ -1,0 +1,21 @@
+init:
+  bias:
+    accel:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    gyro:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+
+imu:
+  publish_hz: 250
+  sensor_pub_rate: 250
+  topic: /imu/data
+
+frames:
+  frame_id_out: map
+  frame_id_fixed: odom
+  frame_id_imu: base_link
+  frame_id_odo: odom_link

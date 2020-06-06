@@ -1,0 +1,24 @@
+<?xml version="1.0" ?>
+<sdf version='1.5'>
+  <model name="pole">
+      <static>true</static>
+      <link name='pole_link'>
+        <collision name='pole_collision'>
+          <geometry>
+            <box>
+              <size>10 1 1</size>
+            </box>
+          </geometry>
+        </collision>
+
+        <visual name='pole_mesh'>
+	  <cast_shadows>true</cast_shadows>
+          <geometry>
+            <mesh>
+              <uri>model://pole/meshes/model.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>   
+  </model>
+</sdf>

@@ -38,7 +38,7 @@ init:
 imu:
   publish_hz: 50
   sensor_pub_rate: 125
-  topic: /imu/dataAdis
+  topic: /imu/data
   noise:
     sig_gyro_inRun : 7.757018897752577e-06
     sig_ARW : 2.908882086657216e-05
@@ -59,7 +59,7 @@ joint:
 frames:
   frame_id_out: map
   frame_id_fixed: odom
-  frame_id_imu: imu_link
+  frame_id_imu: base_link
   frame_id_odo: odom_link
 
 wheel:

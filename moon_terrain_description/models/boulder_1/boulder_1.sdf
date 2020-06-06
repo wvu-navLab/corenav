@@ -1,0 +1,36 @@
+<?xml version="1.0" ?>
+<sdf version='1.5'>
+  <model name="boulder_1">
+      <static>false</static>
+      <link name='boulder_1_link'>
+ 	<inertial>
+        	<mass>50</mass>
+        	<inertia>
+          	<ixx>10</ixx>
+          	<ixy>0</ixy>
+          	<ixz>0</ixz>
+          	<iyy>10</iyy>
+          	<iyz>0</iyz>
+          	<izz>10</izz>
+        	</inertia>
+      	</inertial>
+        <collision name='boulder_1_collision'>
+          <geometry>
+            <box>
+              <size>4 4 0.01</size>
+            </box>
+          </geometry>
+        </collision>
+
+        <visual name='boulder_1_mesh'>
+	  <cast_shadows>true</cast_shadows>
+          <geometry>
+            <mesh>
+              <uri>model://boulder_1/meshes/model.dae</uri>
+              <scale>1 1 1</scale>
+            </mesh>
+          </geometry>
+        </visual>
+      </link>   
+  </model>
+</sdf>

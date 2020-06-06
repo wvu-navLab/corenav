@@ -94,9 +94,9 @@ bool CoreNav::Init(const ros::NodeHandle& n){
                 0,0,0.0025,0,
                 0,0,0,0.0025;
 
-        R_zupt << std::pow(0.012,2),0,0,
-                0,std::pow(0.012,2),0,
-                0,0,std::pow(0.012,2);
+        R_zupt << std::pow(0.1,2),0,0,
+                0,std::pow(0.1,2),0,
+                0,0,std::pow(0.1,2);
 
         R_zaru << std::pow(0.01,2),0,0,
                 0,std::pow(0.01,2),0,
@@ -464,12 +464,12 @@ void CoreNav::Update(const CoreNav::Vector13& odo)
 // Be careful with the IMU placement. We hardcoded the orientation of the IMU output here. Instead a static tf can be better.
 CoreNav::Vector6 CoreNav::getImuData(const ImuData& imu_dataAdis_)
 {
-        CoreNav::Vector6 imuVec((Vector(6) << imu_dataAdis_.linear_acceleration.y*(-1.0),
-                                 imu_dataAdis_.linear_acceleration.x,
-                                 imu_dataAdis_.linear_acceleration.z,
-                                 imu_dataAdis_.angular_velocity.y*(-1.0),
+        CoreNav::Vector6 imuVec((Vector(6) << imu_dataAdis_.linear_acceleration.x,
+                                 imu_dataAdis_.linear_acceleration.y,
+                                 imu_dataAdis_.linear_acceleration.z*(-1.0),
                                  imu_dataAdis_.angular_velocity.x,
-                                 imu_dataAdis_.angular_velocity.z).finished());
+                                 imu_dataAdis_.angular_velocity.y,
+                                 imu_dataAdis_.angular_velocity.z*(-1.0)).finished());
 
         return imuVec;
 }

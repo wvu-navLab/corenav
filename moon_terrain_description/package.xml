@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package>
+  <name>moon_terrain_description</name>
+  <version>0.2.0</version>
+  <description>The moon_terrain_description package</description>
+
+  <maintainer email="cakilic@mix.wvu.edu">cagri</maintainer>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>gazebo_ros</build_depend>
+  <build_depend>roscpp</build_depend>
+  <run_depend>gazebo_ros</run_depend>
+  <run_depend>roscpp</run_depend>
+
+  <export>
+    <gazebo_ros gazebo_model_path="${prefix}/models"/>
+  </export>
+</package>
