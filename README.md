@@ -1,3 +1,12 @@
+# How to launch
+
+After catkin_make and source/devel.bash
+```roslaunch core_nav empty_lunar_without_ekf.launch```
+
+When you see the initial IMU bias values are present, open another terminal and
+
+```roslaunch core_nav test_online.launch```
+
 # Core Navigation (CN)
 
 ## Overview
