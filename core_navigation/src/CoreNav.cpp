@@ -94,9 +94,9 @@ bool CoreNav::Init(const ros::NodeHandle& n){
                 0,0,0.0025,0,
                 0,0,0,0.0025;
 
-        R_zupt << std::pow(0.1,2),0,0,
-                0,std::pow(0.1,2),0,
-                0,0,std::pow(0.1,2);
+        R_zupt << std::pow(0.01,2),0,0,
+                0,std::pow(0.01,2),0,
+                0,0,std::pow(0.01,2);
 
         R_zaru << std::pow(0.01,2),0,0,
                 0,std::pow(0.01,2),0,
