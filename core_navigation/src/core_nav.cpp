@@ -31,20 +31,37 @@
  * Authors: Cagri, Ryan
  */
 
-#include <ros/ros.h>
-#include <core_navigation/CoreNav.h>
+ #include <ros/ros.h>
+ #include <core_navigation/CoreNav.h>
 
-int main(int argc, char** argv){
-        ros::init(argc, argv, "inertial propogation");
-        ros::NodeHandle n("~");
+ int main(int argc, char** argv){
+         ros::init(argc, argv, "inertial propogation");
+         ros::NodeHandle n("~");
 
-        CoreNav CoreNav;
-        if(!CoreNav.Initialize(n)) {
-                ROS_ERROR("%s: Failed to initialize the nav. filter.",
-                          ros::this_node::getName().c_str());
-                return EXIT_FAILURE;
-        }
-        ros::spin();
+         CoreNav coreNav;
+         if(!coreNav.Initialize(n)) {
+                 ROS_ERROR("%s: Failed to initialize the nav. filter.",
+                           ros::this_node::getName().c_str());
+                 return EXIT_FAILURE;
+         }
+         while(ros::ok())
+         {
+             if(coreNav.propagate_flag)
+             {
+                 coreNav.Propagate(coreNav.imu,coreNav.odo,coreNav.joint);
+                 //ROS_INFO("after Propagate\n");
+                 coreNav.propagate_flag =false;
+             }
 
-        return EXIT_SUCCESS;
+             if(coreNav.update_flag)
+             {
+                 coreNav.Update(coreNav.odo,coreNav.joint);
+                 //ROS_INFO("after Propagate\n");
+                 coreNav.update_flag =false;
+             }
+             ros::spinOnce();
+         }
+         //ros::spin();
+
+         return EXIT_SUCCESS;
 }

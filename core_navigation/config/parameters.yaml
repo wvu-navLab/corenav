@@ -5,7 +5,7 @@ init:
     z: 312.2643980319930
     covx: 1.218469679146834e-14
     covy: 1.218469679146834e-14
-    covz: 0.010000000000000
+    covz: 1.218469679146834e-14
   velocity:
     x: 0.0
     y: 0.0
@@ -36,8 +36,8 @@ init:
       z: 4.047980191900000e+06
 
 imu:
-  publish_hz: 50
-  sensor_pub_rate: 125
+  publish_hz: 100
+  sensor_pub_rate: 100
   topic: /imu/data
   noise:
     sig_gyro_inRun : 7.757018897752577e-06
@@ -60,9 +60,12 @@ frames:
   frame_id_out: map
   frame_id_fixed: odom
   frame_id_imu: base_link
-  frame_id_odo: odom_link
+  frame_id_odo: odom
 
 wheel:
   T_r_: 0.125
-  s_or_: 0.0
+  s_or_: 0.01
   s_delta_or_: 0.0
+  sig_or_L_: 0.05
+  sig_or_R_: 0.05
+  sig_cmc_: 0.05

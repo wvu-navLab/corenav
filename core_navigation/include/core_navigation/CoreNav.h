@@ -42,38 +42,42 @@
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/JointState.h>
 #include <tf/transform_broadcaster.h>
+#include <tf/transform_listener.h>
+
 #include <geometry_utils/Transform3.h>
 #include <geometry_msgs/PointStamped.h>
+#include <geometry_msgs/Twist.h>
 #include <message_filters/time_synchronizer.h>
 
 #include <core_navigation/InsConst.h>
 #include <core_navigation/InsUtils.h>
-
+#include <tf2/LinearMath/Quaternion.h>
+#include <std_msgs/Float64.h>
 class CoreNav {
 public:
 
-typedef sensor_msgs::Imu ImuData;
-typedef nav_msgs::Odometry OdoData;
-typedef sensor_msgs::JointState JointData;
-typedef geometry_msgs::PoseStamped PoseData;
+  typedef sensor_msgs::Imu ImuData;
+  typedef nav_msgs::Odometry OdoData;
+  typedef sensor_msgs::JointState JointData;
+  typedef geometry_msgs::PoseStamped PoseData;
+  typedef Eigen::VectorXd Vector;
+  typedef Eigen::MatrixXd Matrix;
+  typedef Eigen::Matrix<double, 2, 1> Vector2;
+  typedef Eigen::Matrix<double, 3, 1> Vector3;
+  typedef Eigen::Matrix<double, 4, 1> Vector4;
+  typedef Eigen::Matrix<double, 6, 1> Vector6;
+  typedef Eigen::Matrix<double, 9, 1> Vector9;
+  typedef Eigen::Matrix<double, 13, 1> Vector13;
+  typedef Eigen::Matrix<double, 15, 1> Vector15;
 
-typedef Eigen::VectorXd Vector;
-typedef Eigen::MatrixXd Matrix;
+  typedef Eigen::Matrix<double, 3, 3> Matrix3;
+  Matrix3 CbnMinus;
+  Matrix3 eye3=Eigen::Matrix3d::Identity();
+  Matrix3 zeros3=Eigen::Matrix3d::Zero(3,3);
 
-typedef Eigen::Matrix<double, 3, 1> Vector3;
-typedef Eigen::Matrix<double, 4, 1> Vector4;
-typedef Eigen::Matrix<double, 6, 1> Vector6;
-typedef Eigen::Matrix<double, 13, 1> Vector13;
-typedef Eigen::Matrix<double, 15, 1> Vector15;
-
-typedef Eigen::Matrix<double, 3, 3> Matrix3;
-Matrix3 CbnMinus;
-Matrix3 eye3=Eigen::Matrix3d::Identity();
-Matrix3 zeros3=Eigen::Matrix3d::Zero(3,3);
-
-CoreNav::Vector13 odo;
-CoreNav::Vector6 imu;
-CoreNav::Vector4 joint;
+  CoreNav::Vector13 odo;
+  CoreNav::Vector6 imu;
+  CoreNav::Vector4 joint;
 
 CoreNav();
 ~CoreNav();
@@ -81,7 +85,7 @@ CoreNav();
 // Calls LoadParameters and RegisterCallbacks. Fails on failure of either.
 bool Initialize(const ros::NodeHandle& n);
 
-private:
+// private:
 // Node initialization
 bool Init(const ros::NodeHandle& n);
 bool LoadParameters(const ros::NodeHandle& n);
@@ -89,13 +93,17 @@ bool RegisterCallbacks(const ros::NodeHandle& n);
 
 // Publish estimated  states.
 void PublishStates(const CoreNav::Vector3& states, const ros::Publisher& pub);
+void PublishStatesSlip(const CoreNav::Vector3& slip_states, const ros::Publisher& slip_pub);
+void PublishStatesCN(const CoreNav::Vector9& cn_states, const ros::Publisher& cn_pub_);
+
 
 void ImuCallback(const ImuData& imu_data_);
 void OdoCallback(const OdoData& odo_data_);
 void JointCallBack(const JointData& joint_data_);
 
-void Update(const CoreNav::Vector13& odo);
-void Propagate(const CoreNav::Vector6& imu, const CoreNav::Vector4& joint);
+
+void Update(const CoreNav::Vector13& odo,const CoreNav::Vector4& joint);
+void Propagate(const CoreNav::Vector6& imu, const CoreNav::Vector13& odo,const CoreNav::Vector4& joint);
 
 void NonHolonomic(const CoreNav::Vector3 vel, const CoreNav::Vector3 att, const CoreNav::Vector3 llh, CoreNav::Vector15 errorStates, Eigen::MatrixXd P, CoreNav::Vector3 omega_b_ib);
 
@@ -116,6 +124,7 @@ CoreNav::Vector6 getImuData(const ImuData& imu_data_);
 CoreNav::Vector4 getJointData(const JointData &joint_data_);
 CoreNav::Vector13 getOdoData(const OdoData& odo_data_);
 
+
 // The node's name.
 std::string name_;
 
@@ -125,7 +134,7 @@ ros::Subscriber odo_sub_;
 ros::Subscriber joint_sub_;
 
 // Publisher.
-ros::Publisher position_pub_, velocity_pub_, attitude_pub_, enu_pub_;
+ros::Publisher position_pub_, velocity_pub_, attitude_pub_, enu_pub_, cn_pub_, slip_pub_;
 tf::TransformBroadcaster transformed_states_tf_broad;
 
 OdoData odo_data_;
@@ -139,6 +148,9 @@ bool has_imu_ = false;
 bool first_odo_ = true;
 bool first_joint_ = true;
 bool first_imu_ = true;
+bool flag = true;
+bool propagate_flag = false;
+bool update_flag = false;
 
 // Most recent time stamp for publishers.
 ros::Time stamp_;
@@ -166,14 +178,21 @@ int num_states_ = 15;
 CoreNav::Vector15 error_states_; // {pos., vel, att, ba, bg}
 CoreNav::Vector3 ba_;
 CoreNav::Vector3 bg_;
-CoreNav::Vector3 ins_att_, ins_vel_, ins_pos_, ins_enu_;
+CoreNav::Vector3 ins_att_, ins_vel_, ins_pos_, ins_enu_,slip_cn_,savePos, ins_enu_slip, ins_enu_slip3p, ins_enu_slip_3p;
 CoreNav::Vector4 Z_;
-CoreNav::Matrix P_, Q_, STM_;
+CoreNav::Vector9 ins_cn_;
+CoreNav::Matrix P_, Q_, STM_, P_pred, P;
 Eigen::Matrix<double, 4, 4> R_;
+Eigen::Matrix<double, 4, 4> R_1;
+Eigen::Matrix<double, 4, 4> R_2;
 Eigen::Matrix<double, 3, 3> R_zupt;
 Eigen::Matrix<double, 3, 3> R_zaru;
+Eigen::Matrix<double, 4, 4> R_IP;
+Eigen::Matrix<double, 4, 4> R_IP_1;
+Eigen::Matrix<double, 4, 4> R_IP_2;
 Eigen::Matrix<double, 2, 2> R_holo;
 Eigen::Matrix<double, 15, 4> K_;
+Eigen::Matrix<double, 15, 4> K_pred;
 Eigen::Matrix<double, 15, 3> K_zupt;
 Eigen::Matrix<double, 15, 3> K_zaru;
 Eigen::Matrix<double, 15, 2> K_holo;
@@ -185,7 +204,8 @@ Eigen::Matrix<double, 2, 1> z_holo;
 
 CoreNav::Vector3 H11_, H12_, H21_, H31_, H32_, H24_, H41_, H42_;
 double z11_, z21_, z31_, z41_;
-double rearVel_, headRate_, T_r_, s_or_, s_delta_or_;
+double rearVel_, headRate_, T_r_, s_or_, s_delta_or_,velFrontLeft_,velFrontRight_,velBackLeft_,velBackRight_,sig_or_L_,sig_or_R_,sig_cmc_;
+
 
 CoreNav::Vector3 omega_b_ib_, omega_b_ib_prev_, omega_n_ie_;
 CoreNav::Vector3 f_ib_b_, f_ib_b_prev_, omega_n_en_, omega_n_in_, grav_;
@@ -197,17 +217,42 @@ CoreNav::Matrix3 Omega_b_ib_, Omega_n_ie_, Omega_n_en_;
         double position_noise_, attitude_noise_, velocity_noise_, bias_noise_;
 
 // initial pose
-double init_x, init_y, init_z, init_vx, init_vy, init_vz, psiEst;
-double init_roll, init_pitch, init_yaw, sigma_x, sigma_y;
-double sigma_z, sigma_vx, sigma_vy, prev_stamp_, up_time_;
-double sigma_vz, sigma_roll, sigma_pitch, sigma_yaw;
-double init_ba_x, init_ba_y, init_ba_z, init_bg_x, init_bg_y, init_bg_z;
-double init_bias_a_x, init_bias_a_y, init_bias_a_z, init_bias_g_x, init_bias_g_y, init_bias_g_z;
-double init_ecef_x,init_ecef_y,init_ecef_z;
-double imu_stamp_curr_, imu_stamp_prev_, odo_stamp_curr_, odo_stamp_prev_;
-double joint_stamp_curr_, joint_stamp_prev_;
-double dt_odo_, dt_imu_;
-int count=0;
+// initial pose
+        double init_x, init_y, init_z, init_vx, init_vy, init_vz, psiEst;
+        double init_roll, init_pitch, init_yaw, sigma_x, sigma_y;
+        double init_cov_x,init_cov_y,init_cov_z;
+        double init_cov_vx,init_cov_vy,init_cov_vz;
+        double init_cov_roll, init_cov_pitch, init_cov_yaw;
+        double init_ecef_x,init_ecef_y,init_ecef_z;
+        double init_ba_x, init_ba_y, init_ba_z, init_bg_x, init_bg_y, init_bg_z;
+        double init_bias_a_x, init_bias_a_y, init_bias_a_z, init_bias_g_x, init_bias_g_y, init_bias_g_z;
+        double sigma_z, sigma_vx, sigma_vy, prev_stamp_, up_time_;
+        double sigma_vz, sigma_roll, sigma_pitch, sigma_yaw;
+        double imu_stamp_curr_, imu_stamp_prev_, odo_stamp_curr_, odo_stamp_prev_;
+        double joint_stamp_curr_, joint_stamp_prev_;
+        double dt_odo_, dt_imu_;
+        int count=0;
+        int slip_i, i;
+        double xy_errSlip;
+        double odomUptCount;;
+        double delta_x;
+        double delta_y;
+        double delta_z;
+        double yaw;
+        double pitch;
+        double roll;
+        double yawTruth;
+        double pitchTruth;
+        double rollTruth;
+        double pitchAcc;
+        double rollAcc;
+        double pos_x;
+        double pos_y;
+        double pos_z;
+        double orient_x;
+        double orient_y;
+        double orient_z;
+        double orient_w;
 
 };
 #endif
