@@ -1,4 +1,7 @@
-# Core Navigation (CN)
+<p align="center">
+<img alt="Architecture" src="core_navigation_demos/doc/corenav4.gif" width="300">
+</p>
+
 
 ## Overview
 Improved Planetary Rover Inertial Navigation and Wheel Odometry Performance through Periodic Use of Zero-Type Constraint
