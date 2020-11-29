@@ -14,10 +14,10 @@ Improved Planetary Rover Inertial Navigation and Wheel Odometry Performance thro
 <img alt="Architecture" src="core_navigation_demos/doc/architecturev2.jpg" width="700">
 </p>
 
-We present an approach to enhance wheeled planetary rover dead-reckoning localization performance by leveraging the use of zero-type constraint equations in the navigation filter. Without external aiding, inertial navigation solutions inherently exhibit cubic error growth. Furthermore, for planetary rovers that are traversing diverse types of terrain, wheel odometry is often unreliable for use in localization, due to wheel slippage. For current Mars rovers, computer vision-based approaches are generally used whenever there is a high possibility of positioning error; however, these strategies require additional computational power, energy resources, adequate features in the environment, and significantly slow down the rover traverse speed. To this end, we propose a navigation approach that compensates for the high likelihood of odometry errors by providing a reliable navigation solution that leverages non-holonomic vehicle constraints as well as state-aware pseudo-measurements (e.g., zero velocity and zero angular rate) updates during periodic stops. By using this, computationally expensive visual-based corrections could be performed less often. Experimental tests that compare against GPS-based localization are used to demonstrate the accuracy of the proposed approach.
+This repository provides a localization algorithm that compensates for the high likelihood of odometry errors by providing a reliable localization solution that leverages nonholonomic vehicle constraints as well as state-aware pseudo-measurements (e.g., zero velocity and zero angular rate) updates during periodic stops.
 
 
-**Keywords:** navigation, dead-reckoning, zero-velocity, non-holonomic
+**Keywords:** localization, dead-reckoning, zero-velocity, non-holonomic
 
 
 ## Citation
